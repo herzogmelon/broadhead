@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Broadhead Automations — Precision AI. Automated.</title>
+  <meta name="description" content="Broadhead Automations builds intelligent AI automation systems that eliminate busywork and scale your operations.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: { 950: '#060E1A', 900: '#0A1628', 800: '#0F2035', 700: '#1A3048' },
+            brand: { 500: '#5B9FD8', 400: '#7AB8E8', 300: '#A8D4F5' },
+            accent: { cyan: '#4AEAED' },
+            silver: { 200: '#C8D6E5', 100: '#E8EFF6' },
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Source Sans 3', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Source Sans 3', sans-serif; background: #060E1A; color: #C8D6E5; overflow-x: hidden; }
+
+    /* ── SVG noise overlay ── */
+    .noise-overlay {
+      position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
+
+    /* ── Typography ── */
+    .font-display { font-family: 'Outfit', sans-serif; }
+    .font-body { font-family: 'Source Sans 3', sans-serif; }
+    .heading-hero { font-size: clamp(3rem, 8vw, 6rem); font-weight: 800; line-height: 0.95; letter-spacing: -0.03em; }
+    .heading-section { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; line-height: 1.1; }
+    .heading-sub { font-size: 1.5rem; font-weight: 600; }
+    .label-overline { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: #A8D4F5; }
+    .body-text { font-size: 1.125rem; font-weight: 400; line-height: 1.7; }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInLeft {
+      from { opacity: 0; transform: translateX(-40px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeInRight {
+      from { opacity: 0; transform: translateX(40px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.06); }
+    }
+    @keyframes dashFlow {
+      to { stroke-dashoffset: -40; }
+    }
+    @keyframes chevronBounce {
+      0%, 100% { opacity: 0.4; transform: translateY(0); }
+      50% { opacity: 0.8; transform: translateY(6px); }
+    }
+
+    /* ── Dotted Surface ── */
+    #dottedSurface {
+      position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0;
+    }
+    #dottedSurface canvas {
+      display: block; width: 100%; height: 100%;
+    }
+
+    .spring-ease { animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+
+    /* Scroll-triggered animations */
+    [data-animate] { opacity: 0; }
+    [data-animate].is-visible { animation-fill-mode: both; }
+    [data-animate="fadeUp"].is-visible { animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    [data-animate="fadeInLeft"].is-visible { animation: fadeInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    [data-animate="fadeInRight"].is-visible { animation: fadeInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    [data-animate="scaleIn"].is-visible { animation: scaleIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+    /* Hero animations (no scroll trigger — immediate) */
+    .hero-anim { animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.875rem 2rem; border-radius: 9999px;
+      background: #5B9FD8; color: #060E1A;
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1rem;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), opacity 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .btn-primary:hover { background: #7AB8E8; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(91,159,216,0.25); }
+    .btn-primary:focus-visible { outline: 2px solid #4AEAED; outline-offset: 3px; }
+    .btn-primary:active { transform: translateY(0) scale(0.98); }
+
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.875rem 2rem; border-radius: 9999px;
+      background: transparent; color: #5B9FD8;
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1rem;
+      text-decoration: none; border: 2px solid #5B9FD8; cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), opacity 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+    .btn-ghost:hover { background: rgba(91,159,216,0.1); color: #7AB8E8; border-color: #7AB8E8; transform: translateY(-2px); }
+    .btn-ghost:focus-visible { outline: 2px solid #4AEAED; outline-offset: 3px; }
+    .btn-ghost:active { transform: translateY(0) scale(0.98); }
+
+    /* ── Sticky Nav ── */
+    .site-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 1rem 2rem;
+      background: rgba(6,14,26,0.85);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(26,48,72,0.5);
+      transform: translateY(-100%);
+      transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+    .site-nav.is-visible { transform: translateY(0); }
+
+    .nav-link {
+      color: #C8D6E5; text-decoration: none; font-family: 'Outfit', sans-serif;
+      font-weight: 500; font-size: 0.875rem; position: relative;
+      transition: color 0.2s ease;
+    }
+    .nav-link::after {
+      content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
+      height: 2px; background: #5B9FD8;
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.25s cubic-bezier(0.16,1,0.3,1);
+    }
+    .nav-link:hover { color: #7AB8E8; }
+    .nav-link:hover::after { transform: scaleX(1); }
+    .nav-link:focus-visible { outline: 2px solid #4AEAED; outline-offset: 3px; }
+
+
+    /* ── Timeline ── */
+    .timeline-line { width: 1px; background: #1A3048; }
+    .timeline-node {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #5B9FD8;
+      box-shadow: 0 0 12px rgba(91,159,216,0.4);
+      flex-shrink: 0;
+    }
+
+    /* ── Mobile nav ── */
+    .mobile-menu {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(6,14,26,0.97);
+      backdrop-filter: blur(20px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .mobile-menu.is-open { opacity: 1; pointer-events: auto; }
+    .mobile-menu .nav-link { font-size: 1.5rem; }
+
+    /* ── Footer links ── */
+    .footer-link {
+      color: #C8D6E5; text-decoration: none; font-size: 0.875rem;
+      position: relative; transition: color 0.2s ease;
+    }
+    .footer-link::after {
+      content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
+      height: 1px; background: #7AB8E8;
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.25s cubic-bezier(0.16,1,0.3,1);
+    }
+    .footer-link:hover { color: #7AB8E8; }
+    .footer-link:hover::after { transform: scaleX(1); }
+    .footer-link:focus-visible { outline: 2px solid #4AEAED; outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <!-- Noise overlay -->
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <!-- Dotted Surface (Three.js animated particles — fixed behind all sections) -->
+  <div id="dottedSurface" aria-hidden="true"></div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- NAV -->
+  <!-- ════════════════════════════════════════════ -->
+  <nav class="site-nav" id="siteNav">
+    <div class="max-w-[1200px] mx-auto flex items-center justify-between">
+      <a href="#hero" class="flex items-center gap-3">
+        <img src="brand_assets/Logo.jpg" alt="Broadhead" class="h-24 rounded" />
+      </a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#about" class="nav-link">About</a>
+        <a href="#services" class="nav-link">Services</a>
+        <a href="#process" class="nav-link">Process</a>
+        <a href="#contact" class="nav-link">Contact</a>
+      </div>
+      <button id="menuBtn" class="md:hidden w-8 h-8 flex flex-col justify-center items-center gap-1.5 bg-transparent border-none cursor-pointer" aria-label="Menu">
+        <span class="block w-6 h-0.5 bg-silver-200 transition-transform duration-200"></span>
+        <span class="block w-6 h-0.5 bg-silver-200 transition-opacity duration-200"></span>
+        <span class="block w-6 h-0.5 bg-silver-200 transition-transform duration-200"></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <button id="closeMenu" class="absolute top-6 right-6 text-silver-200 text-3xl bg-transparent border-none cursor-pointer" aria-label="Close menu">&times;</button>
+    <a href="#about" class="nav-link mobile-nav-link">About</a>
+    <a href="#services" class="nav-link mobile-nav-link">Services</a>
+    <a href="#process" class="nav-link mobile-nav-link">Process</a>
+    <a href="#contact" class="nav-link mobile-nav-link">Contact</a>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- HERO -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="hero" class="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden" style="background: rgba(6,14,26,0.85);">
+    <div class="relative z-10 text-center max-w-[800px]">
+      <p class="label-overline hero-anim" style="animation-delay: 0s;">001 / HOME</p>
+
+      <!-- Logo with glow -->
+      <div class="relative inline-block mt-8 mb-10 hero-anim" style="animation-delay: 0.1s;">
+        <div class="absolute inset-0 rounded-2xl" style="background: radial-gradient(circle, rgba(91,159,216,0.25) 0%, transparent 70%); animation: pulseGlow 4s ease-in-out infinite; filter: blur(20px);" aria-hidden="true"></div>
+        <img src="brand_assets/Logo.jpg" alt="Broadhead Automations logo" class="relative w-[28rem] md:w-[36rem] rounded-xl" style="box-shadow: 0 8px 32px rgba(91,159,216,0.2);" />
+      </div>
+
+      <h1 class="font-display heading-hero text-silver-100 hero-anim" style="animation-delay: 0.2s;">
+        Precision AI.<br>
+        <span class="text-brand-500">Automated.</span>
+      </h1>
+
+      <p class="body-text text-silver-200 mt-6 mx-auto max-w-[580px] hero-anim" style="animation-delay: 0.35s;">
+        We build intelligent automation systems that eliminate busywork and scale your operations — so you can focus on what matters.
+      </p>
+
+      <div class="flex flex-wrap items-center justify-center gap-4 mt-10 hero-anim" style="animation-delay: 0.5s;">
+        <a href="#contact" class="btn-primary">
+          Get Started
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="#services" class="btn-ghost">See Our Work</a>
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2" style="animation: chevronBounce 2.5s ease-in-out infinite;" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#5B9FD8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- ABOUT -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="about" class="relative py-28 md:py-36 px-6" style="background: rgba(10,22,40,0.88); clip-path: polygon(0 4%, 100% 0, 100% 100%, 0 100%);">
+    <!-- Subtle gradient -->
+    <div class="absolute inset-0" style="background: radial-gradient(ellipse 50% 60% at 85% 50%, rgba(91,159,216,0.05) 0%, transparent 70%);" aria-hidden="true"></div>
+
+    <div class="relative z-10 max-w-[1200px] mx-auto grid md:grid-cols-5 gap-12 md:gap-20 items-center">
+      <!-- Text (3 cols) -->
+      <div class="md:col-span-3">
+        <p class="label-overline mb-4" data-animate="fadeInLeft">002 / ABOUT</p>
+        <div class="w-16 h-0.5 bg-brand-500 mb-6" data-animate="fadeInLeft" style="animation-delay: 0.05s;"></div>
+        <h2 class="font-display heading-section text-silver-100 mb-8" data-animate="fadeInLeft" style="animation-delay: 0.1s;">Built for the<br>Future of Work</h2>
+        <p class="body-text text-silver-200 max-w-[540px] mb-6" data-animate="fadeInLeft" style="animation-delay: 0.2s;">
+          Broadhead Automations designs and deploys custom AI systems for businesses ready to move faster. We identify the bottlenecks in your operations and replace them with intelligent, self-improving automation.
+        </p>
+        <p class="body-text text-silver-200 max-w-[540px]" data-animate="fadeInLeft" style="animation-delay: 0.3s;">
+          From document processing to end-to-end workflow orchestration, we build the infrastructure that lets your team focus on high-value work while AI handles the rest.
+        </p>
+      </div>
+
+      <!-- Decorative SVG (2 cols) -->
+      <div class="md:col-span-2 flex justify-center" data-animate="scaleIn" style="animation-delay: 0.2s;">
+        <svg viewBox="0 0 300 340" class="w-full max-w-[280px]" fill="none" aria-hidden="true">
+          <!-- Wireframe broadhead shape -->
+          <polygon points="150,20 260,130 220,310 80,310 40,130" stroke="#5B9FD8" stroke-width="1" fill="none" opacity="0.3"/>
+          <polygon points="150,50 235,135 205,285 95,285 65,135" stroke="#5B9FD8" stroke-width="1" fill="none" opacity="0.2"/>
+          <polygon points="150,80 210,140 190,260 110,260 90,140" stroke="#4AEAED" stroke-width="0.5" fill="none" opacity="0.15"/>
+          <!-- Internal lines -->
+          <line x1="150" y1="20" x2="150" y2="310" stroke="#5B9FD8" stroke-width="0.5" opacity="0.15"/>
+          <line x1="40" y1="130" x2="260" y2="130" stroke="#5B9FD8" stroke-width="0.5" opacity="0.1"/>
+          <line x1="80" y1="310" x2="260" y2="130" stroke="#5B9FD8" stroke-width="0.5" opacity="0.08"/>
+          <line x1="220" y1="310" x2="40" y2="130" stroke="#5B9FD8" stroke-width="0.5" opacity="0.08"/>
+          <!-- Nodes -->
+          <circle cx="150" cy="20" r="4" fill="#5B9FD8" opacity="0.5"/>
+          <circle cx="260" cy="130" r="3" fill="#5B9FD8" opacity="0.3"/>
+          <circle cx="40" cy="130" r="3" fill="#5B9FD8" opacity="0.3"/>
+          <circle cx="220" cy="310" r="3" fill="#4AEAED" opacity="0.25"/>
+          <circle cx="80" cy="310" r="3" fill="#4AEAED" opacity="0.25"/>
+          <circle cx="150" cy="130" r="5" fill="#5B9FD8" opacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SERVICES -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="services" class="relative py-28 md:py-36 px-6" style="background: rgba(15,32,53,0.88);">
+    <!-- Dot pattern -->
+    <div class="absolute inset-0" style="background-image: radial-gradient(circle, rgba(91,159,216,0.06) 1px, transparent 1px); background-size: 32px 32px;" aria-hidden="true"></div>
+
+    <div class="relative z-10 max-w-[1200px] mx-auto">
+      <div class="text-center mb-20">
+        <p class="label-overline mb-4" data-animate="fadeUp">003 / SERVICES</p>
+        <h2 class="font-display heading-section text-silver-100" data-animate="fadeUp" style="animation-delay: 0.1s;">What We Build</h2>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-16 lg:gap-y-20">
+        <!-- Service 1 -->
+        <div class="lg:translate-y-0" data-animate="fadeUp" style="animation-delay: 0.1s;">
+          <div class="w-10 h-0.5 bg-brand-500 mb-6"></div>
+          <svg class="mb-4" width="36" height="36" viewBox="0 0 36 36" fill="none"><path d="M6 18h6l3-9 6 18 3-9h6" stroke="#5B9FD8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="2" width="32" height="32" rx="4" stroke="#5B9FD8" stroke-width="1" opacity="0.3"/></svg>
+          <h3 class="font-display heading-sub text-silver-100 mb-3">Workflow Automation</h3>
+          <p class="body-text text-silver-200 max-w-[320px]" style="font-size:1rem;">Streamline repetitive processes with intelligent AI pipelines that learn and adapt to your business logic.</p>
+        </div>
+
+        <!-- Service 2 -->
+        <div class="lg:translate-y-10" data-animate="fadeUp" style="animation-delay: 0.2s;">
+          <div class="w-10 h-0.5 bg-brand-500 mb-6"></div>
+          <svg class="mb-4" width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="14" r="6" stroke="#5B9FD8" stroke-width="1.5"/><path d="M8 30c0-5.523 4.477-10 10-10s10 4.477 10 10" stroke="#5B9FD8" stroke-width="1.5" stroke-linecap="round"/><circle cx="28" cy="8" r="4" stroke="#4AEAED" stroke-width="1" opacity="0.5"/><path d="M28 6v4M26 8h4" stroke="#4AEAED" stroke-width="1" opacity="0.5" stroke-linecap="round"/></svg>
+          <h3 class="font-display heading-sub text-silver-100 mb-3">Custom AI Agents</h3>
+          <p class="body-text text-silver-200 max-w-[320px]" style="font-size:1rem;">Purpose-built agents that handle complex tasks autonomously, operating 24/7 with precision and reliability.</p>
+        </div>
+
+        <!-- Service 3 -->
+        <div class="lg:translate-y-0" data-animate="fadeUp" style="animation-delay: 0.3s;">
+          <div class="w-10 h-0.5 bg-brand-500 mb-6"></div>
+          <svg class="mb-4" width="36" height="36" viewBox="0 0 36 36" fill="none"><path d="M4 10h8v16H4zM14 6h8v24h-8zM24 14h8v12h-8z" stroke="#5B9FD8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <h3 class="font-display heading-sub text-silver-100 mb-3">Data Pipeline Engineering</h3>
+          <p class="body-text text-silver-200 max-w-[320px]" style="font-size:1rem;">Connect, transform, and route your data across systems with zero manual intervention and real-time monitoring.</p>
+        </div>
+
+        <!-- Service 4 -->
+        <div class="lg:translate-y-10" data-animate="fadeUp" style="animation-delay: 0.4s;">
+          <div class="w-10 h-0.5 bg-brand-500 mb-6"></div>
+          <svg class="mb-4" width="36" height="36" viewBox="0 0 36 36" fill="none"><rect x="6" y="4" width="24" height="28" rx="2" stroke="#5B9FD8" stroke-width="1.5"/><path d="M12 12h12M12 18h8M12 24h10" stroke="#5B9FD8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/><circle cx="28" cy="28" r="6" stroke="#4AEAED" stroke-width="1.5"/><path d="M26 28l2 2 3-3" stroke="#4AEAED" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <h3 class="font-display heading-sub text-silver-100 mb-3">Document Intelligence</h3>
+          <p class="body-text text-silver-200 max-w-[320px]" style="font-size:1rem;">Extract, classify, and process documents with human-level accuracy at machine speed, from invoices to contracts.</p>
+        </div>
+
+        <!-- Service 5 -->
+        <div class="lg:translate-y-0" data-animate="fadeUp" style="animation-delay: 0.5s;">
+          <div class="w-10 h-0.5 bg-brand-500 mb-6"></div>
+          <svg class="mb-4" width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="4" stroke="#5B9FD8" stroke-width="1.5"/><circle cx="8" cy="8" r="3" stroke="#5B9FD8" stroke-width="1" opacity="0.5"/><circle cx="28" cy="8" r="3" stroke="#5B9FD8" stroke-width="1" opacity="0.5"/><circle cx="8" cy="28" r="3" stroke="#5B9FD8" stroke-width="1" opacity="0.5"/><circle cx="28" cy="28" r="3" stroke="#5B9FD8" stroke-width="1" opacity="0.5"/><line x1="15" y1="15" x2="10" y2="10" stroke="#5B9FD8" stroke-width="1" opacity="0.4"/><line x1="21" y1="15" x2="26" y2="10" stroke="#5B9FD8" stroke-width="1" opacity="0.4"/><line x1="15" y1="21" x2="10" y2="26" stroke="#5B9FD8" stroke-width="1" opacity="0.4"/><line x1="21" y1="21" x2="26" y2="26" stroke="#5B9FD8" stroke-width="1" opacity="0.4"/></svg>
+          <h3 class="font-display heading-sub text-silver-100 mb-3">Integration Architecture</h3>
+          <p class="body-text text-silver-200 max-w-[320px]" style="font-size:1rem;">Seamlessly connect your existing tools into a unified, automated ecosystem that works as one.</p>
+        </div>
+
+        <!-- Service 6 -->
+        <div class="lg:translate-y-10" data-animate="fadeUp" style="animation-delay: 0.6s;">
+          <div class="w-10 h-0.5 bg-brand-500 mb-6"></div>
+          <svg class="mb-4" width="36" height="36" viewBox="0 0 36 36" fill="none"><path d="M18 4l14 8v16l-14 8L4 28V12z" stroke="#5B9FD8" stroke-width="1.5" stroke-linejoin="round"/><path d="M18 4v16l14-8M18 20l-14-8" stroke="#5B9FD8" stroke-width="1" opacity="0.3"/><path d="M18 20v16" stroke="#5B9FD8" stroke-width="1" opacity="0.3"/></svg>
+          <h3 class="font-display heading-sub text-silver-100 mb-3">AI Strategy Consulting</h3>
+          <p class="body-text text-silver-200 max-w-[320px]" style="font-size:1rem;">Identify high-impact automation opportunities and build a practical AI roadmap tailored to your goals.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- HOW IT WORKS -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="process" class="relative py-28 md:py-36 px-6" style="background: rgba(6,14,26,0.88);">
+    <!-- Background gradient -->
+    <div class="absolute inset-0" style="background: radial-gradient(ellipse 60% 70% at 20% 80%, rgba(74,234,237,0.04) 0%, transparent 60%);" aria-hidden="true"></div>
+
+    <div class="relative z-10 max-w-[1200px] mx-auto">
+      <p class="label-overline mb-4" data-animate="fadeUp">004 / PROCESS</p>
+      <h2 class="font-display heading-section text-silver-100 mb-16 md:mb-24" data-animate="fadeUp" style="animation-delay: 0.1s;">How We Work</h2>
+
+      <div class="grid gap-16 md:gap-20 md:pl-20 relative">
+        <!-- Vertical line -->
+        <div class="hidden md:block absolute left-8 top-2 bottom-2 timeline-line" aria-hidden="true"></div>
+
+        <!-- Step 1 -->
+        <div class="relative md:flex items-start gap-8" data-animate="fadeUp" style="animation-delay: 0.15s;">
+          <div class="hidden md:flex absolute left-[-48px] top-1 timeline-node"></div>
+          <div class="relative">
+            <span class="font-display text-brand-500 absolute -top-4 -left-2 md:-left-4" style="font-size: 4rem; font-weight: 800; opacity: 0.12; line-height: 1;">01</span>
+            <h3 class="font-display heading-sub text-silver-100 mb-3 relative z-10">Discovery</h3>
+            <p class="body-text text-silver-200 max-w-[480px]" style="font-size:1rem;">We analyze your operations, identify bottlenecks, and map the automation opportunities that will have the greatest impact on your business.</p>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="relative md:flex items-start gap-8" data-animate="fadeUp" style="animation-delay: 0.25s;">
+          <div class="hidden md:flex absolute left-[-48px] top-1 timeline-node"></div>
+          <div class="relative">
+            <span class="font-display text-brand-500 absolute -top-4 -left-2 md:-left-4" style="font-size: 4rem; font-weight: 800; opacity: 0.12; line-height: 1;">02</span>
+            <h3 class="font-display heading-sub text-silver-100 mb-3 relative z-10">Architecture</h3>
+            <p class="body-text text-silver-200 max-w-[480px]" style="font-size:1rem;">We design a custom AI system tailored to your workflows, tech stack, and team — no off-the-shelf templates.</p>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="relative md:flex items-start gap-8" data-animate="fadeUp" style="animation-delay: 0.35s;">
+          <div class="hidden md:flex absolute left-[-48px] top-1 timeline-node"></div>
+          <div class="relative">
+            <span class="font-display text-brand-500 absolute -top-4 -left-2 md:-left-4" style="font-size: 4rem; font-weight: 800; opacity: 0.12; line-height: 1;">03</span>
+            <h3 class="font-display heading-sub text-silver-100 mb-3 relative z-10">Build &amp; Deploy</h3>
+            <p class="body-text text-silver-200 max-w-[480px]" style="font-size:1rem;">We develop, test, and deploy your automations with zero disruption to your existing operations.</p>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="relative md:flex items-start gap-8" data-animate="fadeUp" style="animation-delay: 0.45s;">
+          <div class="hidden md:flex absolute left-[-48px] top-1 timeline-node"></div>
+          <div class="relative">
+            <span class="font-display text-brand-500 absolute -top-4 -left-2 md:-left-4" style="font-size: 4rem; font-weight: 800; opacity: 0.12; line-height: 1;">04</span>
+            <h3 class="font-display heading-sub text-silver-100 mb-3 relative z-10">Optimize</h3>
+            <p class="body-text text-silver-200 max-w-[480px]" style="font-size:1rem;">We monitor performance, refine models, and continuously scale what works — your systems get smarter over time.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- STATS -->
+  <!-- ════════════════════════════════════════════ -->
+  <section class="relative py-20 md:py-24 px-6" style="background: linear-gradient(135deg, rgba(26,48,72,0.88) 0%, rgba(15,32,53,0.88) 100%);">
+    <div class="relative z-10 max-w-[1200px] mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 text-center" data-animate="fadeUp">
+        <div>
+          <p class="font-display text-brand-500 mb-2" style="font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 800; line-height: 1;">
+            <span data-count="50">0</span><span>+</span>
+          </p>
+          <p class="label-overline text-silver-200">Automations Deployed</p>
+        </div>
+        <div>
+          <p class="font-display text-brand-500 mb-2" style="font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 800; line-height: 1;">
+            <span data-count="10">0</span><span>x</span>
+          </p>
+          <p class="label-overline text-silver-200">Average Efficiency Gain</p>
+        </div>
+        <div>
+          <p class="font-display text-brand-500 mb-2" style="font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 800; line-height: 1;">
+            <span data-count="99.9">0</span><span>%</span>
+          </p>
+          <p class="label-overline text-silver-200">System Uptime</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- CONTACT / CTA -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="contact" class="relative py-32 md:py-44 px-6 text-center" style="background: rgba(10,22,40,0.88);">
+    <!-- Spotlight gradient -->
+    <div class="absolute inset-0" style="background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(91,159,216,0.10) 0%, transparent 70%);" aria-hidden="true"></div>
+
+    <!-- Circuit accents -->
+    <svg class="absolute inset-0 w-full h-full" aria-hidden="true" style="opacity:0.5;">
+      <line x1="5%" y1="30%" x2="20%" y2="30%" class="circuit-line"/>
+      <line x1="20%" y1="30%" x2="20%" y2="70%" class="circuit-line"/>
+      <line x1="80%" y1="25%" x2="95%" y2="25%" class="circuit-line"/>
+      <line x1="80%" y1="25%" x2="80%" y2="75%" class="circuit-line"/>
+      <circle cx="20%" cy="30%" r="3" fill="rgba(91,159,216,0.12)"/>
+      <circle cx="80%" cy="25%" r="3" fill="rgba(91,159,216,0.12)"/>
+    </svg>
+
+    <div class="relative z-10 max-w-[600px] mx-auto">
+      <p class="label-overline mb-4" data-animate="scaleIn">005 / CONTACT</p>
+      <h2 class="font-display text-silver-100 mb-6" data-animate="scaleIn" style="animation-delay: 0.1s; font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 700; line-height: 1.1;">
+        Ready to Automate?
+      </h2>
+      <p class="body-text text-silver-200 mb-10 max-w-[440px] mx-auto" data-animate="scaleIn" style="animation-delay: 0.2s;">
+        Tell us about your business and we'll show you what's possible with precision AI automation.
+      </p>
+      <div data-animate="scaleIn" style="animation-delay: 0.3s;">
+        <a href="mailto:hello@broadheadautomations.com" class="btn-primary" style="font-size: 1.125rem; padding: 1rem 2.5rem;">
+          Book a Consultation
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+      <p class="mt-6" data-animate="scaleIn" style="animation-delay: 0.4s;">
+        <a href="mailto:hello@broadheadautomations.com" class="footer-link text-brand-300" style="font-size: 0.95rem;">hello@broadheadautomations.com</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- FOOTER -->
+  <!-- ════════════════════════════════════════════ -->
+  <footer class="relative px-6 py-12" style="background: rgba(6,14,26,0.92); border-top: 1px solid #1A3048;">
+    <div class="max-w-[1200px] mx-auto">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+        <a href="#hero" class="flex items-center gap-3">
+          <img src="brand_assets/Logo.jpg" alt="Broadhead" class="h-28 rounded" />
+        </a>
+        <div class="flex items-center gap-8">
+          <a href="#about" class="footer-link">About</a>
+          <a href="#services" class="footer-link">Services</a>
+          <a href="#process" class="footer-link">Process</a>
+          <a href="#contact" class="footer-link">Contact</a>
+        </div>
+      </div>
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4 pt-8" style="border-top: 1px solid rgba(26,48,72,0.5);">
+        <p class="text-silver-200" style="font-size: 0.8rem; opacity: 0.6;">&copy; 2026 Broadhead Automations. All rights reserved.</p>
+        <div class="flex items-center gap-5">
+          <!-- LinkedIn -->
+          <a href="#" class="footer-link" aria-label="LinkedIn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          </a>
+          <!-- X / Twitter -->
+          <a href="#" class="footer-link" aria-label="X">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCRIPTS -->
+  <!-- ════════════════════════════════════════════ -->
+  <script>
+    // ── Intersection Observer for scroll animations ──
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
+
+    // ── Sticky nav ──
+    const nav = document.getElementById('siteNav');
+    const hero = document.getElementById('hero');
+    const navObserver = new IntersectionObserver(([entry]) => {
+      nav.classList.toggle('is-visible', !entry.isIntersecting);
+    }, { threshold: 0.1 });
+    navObserver.observe(hero);
+
+    // ── Mobile menu ──
+    const menuBtn = document.getElementById('menuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const closeMenu = document.getElementById('closeMenu');
+    menuBtn.addEventListener('click', () => mobileMenu.classList.add('is-open'));
+    closeMenu.addEventListener('click', () => mobileMenu.classList.remove('is-open'));
+    document.querySelectorAll('.mobile-nav-link').forEach(link => {
+      link.addEventListener('click', () => mobileMenu.classList.remove('is-open'));
+    });
+
+    // ── Counter animation ──
+    const counters = document.querySelectorAll('[data-count]');
+    const countObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target;
+          const target = parseFloat(el.dataset.count);
+          const isDecimal = target % 1 !== 0;
+          const duration = 2000;
+          const start = performance.now();
+
+          function update(now) {
+            const t = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+            const current = eased * target;
+            el.textContent = isDecimal ? current.toFixed(1) : Math.round(current);
+            if (t < 1) requestAnimationFrame(update);
+          }
+          requestAnimationFrame(update);
+          countObserver.unobserve(el);
+        }
+      });
+    }, { threshold: 0.5 });
+    counters.forEach(c => countObserver.observe(c));
+
+    // ── Dotted Surface (Three.js animated particle grid) ──
+    (function() {
+      const container = document.getElementById('dottedSurface');
+      if (!container) return;
+
+      const SEPARATION = 150;
+      const AMOUNTX = 40;
+      const AMOUNTY = 60;
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.Fog(0x060E1A, 2000, 10000);
+
+      const camera = new THREE.PerspectiveCamera(
+        60, window.innerWidth / window.innerHeight, 1, 10000
+      );
+      camera.position.set(0, 355, 1220);
+
+      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x060E1A, 0);
+      container.appendChild(renderer.domElement);
+
+      // Create particle geometry
+      const positions = [];
+      const colors = [];
+
+      for (let ix = 0; ix < AMOUNTX; ix++) {
+        for (let iy = 0; iy < AMOUNTY; iy++) {
+          const x = ix * SEPARATION - (AMOUNTX * SEPARATION) / 2;
+          const z = iy * SEPARATION - (AMOUNTY * SEPARATION) / 2;
+          positions.push(x, 0, z);
+          // Brand blue tint: rgb(91, 159, 216) normalized
+          colors.push(91 / 255, 159 / 255, 216 / 255);
+        }
+      }
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+      const material = new THREE.PointsMaterial({
+        size: 8,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        sizeAttenuation: true,
+      });
+
+      const points = new THREE.Points(geometry, material);
+      scene.add(points);
+
+      let count = 0;
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        const posArr = geometry.attributes.position.array;
+        let i = 0;
+        for (let ix = 0; ix < AMOUNTX; ix++) {
+          for (let iy = 0; iy < AMOUNTY; iy++) {
+            posArr[i * 3 + 1] =
+              Math.sin((ix + count) * 0.3) * 50 +
+              Math.sin((iy + count) * 0.5) * 50;
+            i++;
+          }
+        }
+        geometry.attributes.position.needsUpdate = true;
+
+        renderer.render(scene, camera);
+        count += 0.1;
+      }
+
+      function handleResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      window.addEventListener('resize', handleResize);
+      animate();
+    })();
+  </script>
+</body>
+</html>

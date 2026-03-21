@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node serve.mjs)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(npm ls:*)",
+      "Bash(node screenshot.mjs http://localhost:3000 initial)",
+      "Bash(npx puppeteer:*)",
+      "Bash(PUPPETEER_EXECUTABLE_PATH=/home/belkn/.cache/puppeteer/chrome/linux-146.0.7680.76/chrome-linux64/chrome node screenshot.mjs http://localhost:3000 initial)",
+      "Bash(sudo apt-get:*)",
+      "Bash(dpkg -l)",
+      "Bash(apt list:*)",
+      "Read(//mnt/c/Program Files/Google/Chrome/Application/**)",
+      "Read(//mnt/c/Program Files \\(x86\\)/Google/Chrome/Application/**)",
+      "Read(//mnt/c/Users/nateh/AppData/Local/Temp/**)",
+      "Bash(PUPPETEER_EXECUTABLE_PATH=\"/mnt/c/Program Files/Google/Chrome/Application/chrome.exe\" node screenshot.mjs http://localhost:3000 initial)",
+      "Bash(npx playwright:*)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(node -e \"const p = require\\(''puppeteer''\\); console.log\\(''puppeteer ok''\\)\")",
+      "Bash(node record.mjs)",
+      "Read(//usr/bin/**)",
+      "Read(//home/belkn/.cache/puppeteer/**)",
+      "Bash(echo $PUPPETEER_EXECUTABLE_PATH)",
+      "Bash(apt-cache show:*)",
+      "Bash(mkdir -p /tmp/chrome-deps)",
+      "Read(//tmp/**)",
+      "Bash(apt-get download:*)",
+      "Bash(LD_LIBRARY_PATH=/tmp/chrome-deps/extracted/usr/lib/x86_64-linux-gnu node /home/belkn/Broadhead/record.mjs)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(LD_LIBRARY_PATH=/tmp/chrome-deps/extracted/usr/lib/x86_64-linux-gnu timeout 25 node /home/belkn/Broadhead/record.mjs)",
+      "Bash(find /home/belkn/Broadhead -maxdepth 2 -name tsconfig.json -o -name tailwind.config.* -o -name next.config.*)",
+      "Bash(git config:*)",
+      "Bash(git init:*)",
+      "Bash(git remote:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
