@@ -793,6 +793,43 @@
       #aria-drawer { width: calc(100vw - 32px); right: 16px; }
       #aria-btn { right: 16px; bottom: 16px; }
     }
+
+    /* Lead capture card */
+    .aria-lead-card {
+      align-self: flex-start;
+      width: 95%; max-width: 95%;
+      background: #0F2035; border: 1px solid #1A3048;
+      border-radius: 12px; border-bottom-left-radius: 4px;
+      padding: 14px 14px 12px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .aria-lead-title {
+      font-family: 'Outfit', sans-serif; font-weight: 600;
+      font-size: 13px; color: #C8D6E5; margin: 0 0 2px;
+    }
+    .aria-lead-card input {
+      background: #0A1628; border: 1px solid #1A3048;
+      border-radius: 6px; padding: 7px 10px;
+      font-family: 'Source Sans 3', sans-serif; font-size: 13px;
+      color: #E8EFF6; outline: none; width: 100%; box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+    .aria-lead-card input:focus { border-color: #5B9FD8; }
+    .aria-lead-card input::placeholder { color: #4a5f75; }
+    #aria-lead-submit {
+      background: #5B9FD8; border: none; border-radius: 6px;
+      padding: 8px 12px; color: #060E1A;
+      font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 13px;
+      cursor: pointer; transition: background 0.2s;
+      width: 100%;
+    }
+    #aria-lead-submit:hover { background: #7AB8E8; }
+    #aria-lead-skip {
+      background: none; border: none; cursor: pointer;
+      color: #4a5f75; font-size: 12px; text-align: center;
+      padding: 0; transition: color 0.2s;
+    }
+    #aria-lead-skip:hover { color: #C8D6E5; }
   </style>
 
   <!-- Chat button -->
@@ -856,6 +893,16 @@
         btn.style.display = 'flex';
       });
 
+      // Auto-open after 5s if user hasn't manually opened already
+      setTimeout(() => {
+        if (!greeted) {
+          drawer.classList.add('open');
+          btn.style.display = 'none';
+          greet();
+          greeted = true;
+        }
+      }, 5000);
+
       // Append message bubble
       function addMsg(text, who) {
         const el = document.createElement('div');
@@ -877,6 +924,45 @@
       function hideTyping() {
         const el = document.getElementById('aria-typing-indicator');
         if (el) el.remove();
+      }
+
+      // Lead capture card — injected after 3rd user message
+      function injectLeadCard() {
+        if (document.getElementById('aria-lead-card')) return;
+        const card = document.createElement('div');
+        card.id = 'aria-lead-card';
+        card.className = 'aria-lead-card';
+        card.innerHTML = `
+          <p class="aria-lead-title">Want Sean to give you a call?</p>
+          <input id="aria-lead-name"  type="text"  placeholder="Your name"    autocomplete="name" />
+          <input id="aria-lead-email" type="email" placeholder="Email address" autocomplete="email" />
+          <input id="aria-lead-phone" type="tel"   placeholder="Phone number"  autocomplete="tel" />
+          <button id="aria-lead-submit">Yes, call me →</button>
+          <button id="aria-lead-skip">Skip</button>
+        `;
+        msgEl.appendChild(card);
+        msgEl.scrollTop = msgEl.scrollHeight;
+        document.getElementById('aria-lead-submit').addEventListener('click', submitLead);
+        document.getElementById('aria-lead-skip').addEventListener('click', () => card.remove());
+      }
+
+      async function submitLead() {
+        const name  = document.getElementById('aria-lead-name').value.trim();
+        const email = document.getElementById('aria-lead-email').value.trim();
+        const phone = document.getElementById('aria-lead-phone').value.trim();
+        if (!phone && !email) {
+          document.getElementById('aria-lead-phone').focus();
+          return;
+        }
+        document.getElementById('aria-lead-card').remove();
+        try {
+          await fetch(API_BASE + '/lead', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, phone }),
+          });
+        } catch { /* silent — don't break chat */ }
+        addMsg("Thanks! Sean will reach out to you soon.", 'bot');
       }
 
       // Core API call — sends full history, gets reply

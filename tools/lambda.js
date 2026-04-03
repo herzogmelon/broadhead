@@ -25,21 +25,21 @@ Follow this exact qualification flow, one question at a time. Do NOT ask multipl
 2. Ask what the most time-consuming task their team handles manually is.
 3. Ask roughly how many hours per week that takes.
 4. Ask how big their team is.
-5. Ask for the best name and email to reach them.
+5. Ask for the best name, email, and phone number to reach them.
 
 Rules:
 - Ask one question at a time. Wait for their answer before moving on.
 - Keep responses short — 1-3 sentences max.
 - If they ask about pricing, services, or what Broadhead does, give a brief honest answer then redirect back to the qualification question.
 - If they give a vague answer, ask a gentle follow-up to clarify before moving on.
-- Once you have their name AND email (step 5), close with exactly this message (replace [Name] with their actual name): "Perfect, [Name]. Sean will follow up within 24 hours. Talk soon."
+- Once you have their name, email, AND phone number (step 5), close with exactly this message (replace [Name] with their actual name): "Perfect, [Name]. Sean will follow up within 24 hours. Talk soon."
 - After closing, do not ask any more questions. If they message again, just say you've passed along their info and Sean will be in touch.
 
-When you have collected all five pieces of information (business type, pain point, hours/week, team size, name + email), include this exact JSON block at the very end of your closing message — on its own line, nothing after it:
+When you have collected all five pieces of information (business type, pain point, hours/week, team size, name + email + phone), include this exact JSON block at the very end of your closing message — on its own line, nothing after it:
 
-LEAD_CAPTURED:{"name":"[name]","email":"[email]","businessType":"[type]","painPoint":"[task]","hoursPerWeek":"[hours]","teamSize":"[size]"}
+LEAD_CAPTURED:{"name":"[name]","email":"[email]","phone":"[phone]","businessType":"[type]","painPoint":"[task]","hoursPerWeek":"[hours]","teamSize":"[size]"}
 
-Do not include the JSON until you have all five answers AND the visitor's name and email.`;
+Do not include the JSON until you have all five answers AND the visitor's name, email, and phone number.`;
 
 // ── CORS headers ──────────────────────────────────────────────────────────────
 const CORS = {
@@ -57,6 +57,7 @@ async function sendLeadEmail(lead) {
     '',
     `Name:          ${lead.name}`,
     `Email:         ${lead.email}`,
+    `Phone:         ${lead.phone || '—'}`,
     `Business Type: ${lead.businessType}`,
     `Pain Point:    ${lead.painPoint}`,
     `Hours/Week:    ${lead.hoursPerWeek}`,
@@ -83,6 +84,22 @@ export const handler = async (event) => {
   // Health check
   if (event.rawPath === '/health') {
     return { statusCode: 200, headers: CORS, body: JSON.stringify({ status: 'ok' }) };
+  }
+
+  // Lead capture from chat form
+  if (event.rawPath === '/lead') {
+    const { name = '', email = '', phone = '' } = JSON.parse(event.body || '{}');
+    if (!email && !phone) {
+      return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'email or phone required' }) };
+    }
+    const timestamp = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
+    await mailer.sendMail({
+      from: `"Broadhead Automations" <${process.env.GMAIL_USER}>`,
+      to: process.env.LEAD_EMAIL_TO,
+      subject: `Call Request: ${name || 'Website Visitor'}`,
+      text: ['New call request from Broadhead chat', '', `Name:  ${name || '—'}`, `Email: ${email || '—'}`, `Phone: ${phone || '—'}`, '', `Captured: ${timestamp} PT`].join('\n'),
+    });
+    return { statusCode: 200, headers: CORS, body: JSON.stringify({ ok: true }) };
   }
 
   try {
