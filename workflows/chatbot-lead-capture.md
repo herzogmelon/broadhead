@@ -14,6 +14,10 @@ Run Aria — an AI-powered chat widget on the Broadhead Automations website — 
 | `GMAIL_APP_PASS` | `.env` | Gmail App Password (not your login password) |
 | `LEAD_EMAIL_TO` | `.env` | Where lead notifications are delivered |
 | `PORT` | `.env` | Default: 3001 |
+| `NOTION_API_KEY` | `.env` | Notion integration token (for CRM) |
+| `NOTION_LEADS_DB_ID` | `.env` | Notion database ID for lead storage |
+
+> `NOTION_API_KEY` and `NOTION_LEADS_DB_ID` are optional. If missing, leads are emailed only.
 
 ---
 
@@ -99,6 +103,44 @@ Aria's personality and question flow are defined in the system prompt inside `to
 - Adjust the closing message
 
 After editing, restart the server (`Ctrl+C` then `node tools/chat-server.js`).
+
+---
+
+## CRM Setup (Notion)
+
+Leads are saved to a Notion database automatically when `NOTION_API_KEY` and `NOTION_LEADS_DB_ID` are set. Run this once to create the database:
+
+### Step 1 — Create a Notion integration
+1. Go to [notion.so/my-integrations](https://www.notion.so/my-integrations)
+2. Click **New integration** → name it "Broadhead CRM"
+3. Copy the **Internal Integration Token** → paste into `.env` as `NOTION_API_KEY`
+
+### Step 2 — Create a parent page in Notion
+1. In Notion, create a new page (e.g. "Broadhead CRM")
+2. Share it with your integration: click **...** → **Connections** → select "Broadhead CRM"
+3. Copy the page ID from the URL: `notion.so/Your-Page-{PAGE_ID}`
+
+### Step 3 — Run the setup script
+```bash
+cd "My Workflows/Broadhead"
+node tools/setup-notion-crm.js <PAGE_ID>
+```
+The script creates the leads database with all fields and prints the database ID.
+
+### Step 4 — Add the database ID to .env
+```
+NOTION_LEADS_DB_ID=<printed id>
+```
+
+### Step 5 — Redeploy (production only)
+```bash
+bash tools/deploy.sh
+```
+
+### What a lead entry looks like in Notion
+Each captured lead creates a row with: Name, Email, Phone, Business Type, Pain Point, Hours/Week, Team Size, Status (default: **New**), Captured At, and a Notes field for follow-up.
+
+Change **Status** as you work the lead: New → Contacted → Qualified → Closed / Not a Fit.
 
 ---
 

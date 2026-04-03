@@ -24,6 +24,12 @@ Track ideas we've explored, decisions made, and outcomes. This prevents re-hashi
 ## Tried & Learned
 <!-- Ideas we executed on — what happened, what we learned -->
 
+### CRM for Aria Leads — 2026-04-03
+- **Category:** AI business (Broadhead)
+- **The idea:** Build a Notion CRM to store and manage leads captured by Aria. Replaces email-only notifications with a searchable database of leads including contact info, business type, pain point, and qualification data.
+- **Outcome:** Built. `saveLeadToNotion()` added to both `lambda.js` and `chat-server.js`, called alongside `sendLeadEmail()`. Notion failure is caught and logged — never breaks email delivery. One-time setup script at `tools/setup-notion-crm.js` creates the database with full schema (Name, Email, Phone, Business Type, Pain Point, Hours/Week, Team Size, Status, Captured At, Notes). Requires `NOTION_API_KEY` + `NOTION_LEADS_DB_ID` in `.env`; graceful no-op if missing.
+- **Setup:** See CRM Setup section in `workflows/chatbot-lead-capture.md`.
+
 <!-- Template:
 
 ### [Idea Title] — [DATE]

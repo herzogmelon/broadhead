@@ -31,8 +31,10 @@ ANTHROPIC_API_KEY=$(grep '^ANTHROPIC_API_KEY=' .env | cut -d'=' -f2-)
 GMAIL_USER=$(grep '^GMAIL_USER=' .env | cut -d'=' -f2-)
 GMAIL_APP_PASS=$(grep '^GMAIL_APP_PASS=' .env | cut -d'=' -f2-)
 LEAD_EMAIL_TO=$(grep '^LEAD_EMAIL_TO=' .env | cut -d'=' -f2-)
+NOTION_API_KEY=$(grep '^NOTION_API_KEY=' .env | cut -d'=' -f2-)
+NOTION_LEADS_DB_ID=$(grep '^NOTION_LEADS_DB_ID=' .env | cut -d'=' -f2-)
 
-# Validate all four are present
+# Validate required vars are present
 for VAR in ANTHROPIC_API_KEY GMAIL_USER GMAIL_APP_PASS LEAD_EMAIL_TO; do
   if [ -z "${!VAR}" ]; then
     echo "ERROR: $VAR is empty in .env — fill it in before deploying."
@@ -87,7 +89,7 @@ if ! aws iam get-role --role-name "$ROLE_NAME" &>/dev/null; then
 fi
 
 # ── Deploy Lambda function ────────────────────────────────────────────────────
-ENV_VARS="Variables={ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY,GMAIL_USER=$GMAIL_USER,GMAIL_APP_PASS=$GMAIL_APP_PASS,LEAD_EMAIL_TO=$LEAD_EMAIL_TO}"
+ENV_VARS="Variables={ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY,GMAIL_USER=$GMAIL_USER,GMAIL_APP_PASS=$GMAIL_APP_PASS,LEAD_EMAIL_TO=$LEAD_EMAIL_TO,NOTION_API_KEY=$NOTION_API_KEY,NOTION_LEADS_DB_ID=$NOTION_LEADS_DB_ID}"
 
 if aws lambda get-function --function-name "$FUNCTION_NAME" --region "$REGION" &>/dev/null; then
   echo "==> Updating existing Lambda function..."

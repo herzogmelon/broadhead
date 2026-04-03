@@ -54,6 +54,34 @@ LEAD_CAPTURED:{"name":"[name]","email":"[email]","businessType":"[type]","painPo
 
 Do not include the JSON until you have all five answers AND the visitor's name and email.`;
 
+// ── Notion CRM ────────────────────────────────────────────────────────────────
+async function saveLeadToNotion(lead) {
+  if (!process.env.NOTION_API_KEY || !process.env.NOTION_LEADS_DB_ID) return;
+  await fetch('https://api.notion.com/v1/pages', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.NOTION_API_KEY}`,
+      'Content-Type': 'application/json',
+      'Notion-Version': '2022-06-28',
+    },
+    body: JSON.stringify({
+      parent: { database_id: process.env.NOTION_LEADS_DB_ID },
+      properties: {
+        Name: { title: [{ text: { content: lead.name || 'Unknown' } }] },
+        Email: { email: lead.email || null },
+        Phone: { phone_number: lead.phone || null },
+        'Business Type': { rich_text: [{ text: { content: lead.businessType || '' } }] },
+        'Pain Point': { rich_text: [{ text: { content: lead.painPoint || '' } }] },
+        'Hours/Week': { rich_text: [{ text: { content: lead.hoursPerWeek || '' } }] },
+        'Team Size': { rich_text: [{ text: { content: lead.teamSize || '' } }] },
+        Status: { select: { name: 'New' } },
+        'Captured At': { date: { start: new Date().toISOString() } },
+      },
+    }),
+  });
+  console.log(`[lead] Notion CRM updated for ${lead.name}`);
+}
+
 // ── Email sender ──────────────────────────────────────────────────────────────
 async function sendLeadEmail(lead) {
   const timestamp = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
@@ -114,6 +142,7 @@ app.post('/chat', async (req, res) => {
       try {
         const lead = JSON.parse(leadMatch[1]);
         await sendLeadEmail(lead);
+        await saveLeadToNotion(lead).catch(err => console.error('Notion save failed:', err.message));
         leadCaptured = true;
       } catch (err) {
         console.error('[lead] Failed to parse or send lead email:', err.message);
