@@ -673,5 +673,287 @@
       animate();
     })();
   </script>
+
+  <!-- ── Aria Chat Widget ──────────────────────────────────────────────── -->
+  <style>
+    /* Chat button */
+    #aria-btn {
+      position: fixed; bottom: 28px; right: 28px; z-index: 10000;
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #0A1628; border: 2px solid #4AEAED;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: transform 0.2s cubic-bezier(0.16,1,0.3,1);
+      box-shadow: 0 0 0 0 rgba(74,234,237,0.4);
+      animation: ariaPulse 2.5s ease-in-out infinite;
+    }
+    #aria-btn:hover { transform: scale(1.08); }
+    #aria-btn svg { width: 26px; height: 26px; }
+    @keyframes ariaPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(74,234,237,0.35); }
+      50%       { box-shadow: 0 0 0 10px rgba(74,234,237,0); }
+    }
+
+    /* Chat drawer */
+    #aria-drawer {
+      position: fixed; bottom: 96px; right: 28px; z-index: 10000;
+      width: 360px; max-height: 520px;
+      background: #0A1628; border: 1px solid #1A3048;
+      border-radius: 16px; display: flex; flex-direction: column;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+      transform: translateY(16px) scale(0.97); opacity: 0;
+      pointer-events: none;
+      transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease;
+    }
+    #aria-drawer.open {
+      transform: translateY(0) scale(1); opacity: 1; pointer-events: all;
+    }
+
+    /* Drawer header */
+    .aria-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px; border-bottom: 1px solid #1A3048;
+      flex-shrink: 0;
+    }
+    .aria-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, #5B9FD8, #4AEAED);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px; color: #060E1A;
+    }
+    .aria-header-text { flex: 1; }
+    .aria-header-name {
+      font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 14px; color: #E8EFF6;
+    }
+    .aria-header-status { font-size: 12px; color: #4AEAED; }
+    .aria-close {
+      background: none; border: none; cursor: pointer;
+      color: #C8D6E5; opacity: 0.5; transition: opacity 0.2s;
+      padding: 4px; display: flex; align-items: center;
+    }
+    .aria-close:hover { opacity: 1; }
+
+    /* Messages */
+    #aria-messages {
+      flex: 1; overflow-y: auto; padding: 14px 14px 8px;
+      display: flex; flex-direction: column; gap: 10px;
+      scrollbar-width: thin; scrollbar-color: #1A3048 transparent;
+    }
+    .aria-msg {
+      max-width: 82%; padding: 10px 13px; border-radius: 12px;
+      font-family: 'Source Sans 3', sans-serif; font-size: 14px; line-height: 1.55;
+    }
+    .aria-msg.bot {
+      background: #0F2035; color: #C8D6E5; border-bottom-left-radius: 4px; align-self: flex-start;
+    }
+    .aria-msg.user {
+      background: #5B9FD8; color: #060E1A; font-weight: 500;
+      border-bottom-right-radius: 4px; align-self: flex-end;
+    }
+    .aria-typing {
+      display: flex; gap: 4px; align-items: center;
+      padding: 10px 14px; background: #0F2035; border-radius: 12px;
+      border-bottom-left-radius: 4px; align-self: flex-start;
+    }
+    .aria-typing span {
+      width: 6px; height: 6px; border-radius: 50%; background: #5B9FD8;
+      animation: ariaDot 1.2s ease-in-out infinite;
+    }
+    .aria-typing span:nth-child(2) { animation-delay: 0.2s; }
+    .aria-typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes ariaDot {
+      0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+      40%            { opacity: 1;   transform: scale(1); }
+    }
+
+    /* Input area */
+    .aria-input-row {
+      display: flex; gap: 8px; padding: 12px 14px;
+      border-top: 1px solid #1A3048; flex-shrink: 0;
+    }
+    #aria-input {
+      flex: 1; background: #0F2035; border: 1px solid #1A3048;
+      border-radius: 8px; padding: 9px 12px;
+      font-family: 'Source Sans 3', sans-serif; font-size: 14px; color: #E8EFF6;
+      outline: none; resize: none; height: 38px; line-height: 1.4;
+      transition: border-color 0.2s;
+    }
+    #aria-input:focus { border-color: #5B9FD8; }
+    #aria-input::placeholder { color: #4a5f75; }
+    #aria-send {
+      background: #5B9FD8; border: none; border-radius: 8px;
+      width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background 0.2s, transform 0.15s;
+      flex-shrink: 0;
+    }
+    #aria-send:hover { background: #7AB8E8; transform: scale(1.05); }
+    #aria-send:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    #aria-send svg { width: 16px; height: 16px; }
+
+    @media (max-width: 420px) {
+      #aria-drawer { width: calc(100vw - 32px); right: 16px; }
+      #aria-btn { right: 16px; bottom: 16px; }
+    }
+  </style>
+
+  <!-- Chat button -->
+  <button id="aria-btn" aria-label="Chat with Aria">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#4AEAED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  </button>
+
+  <!-- Chat drawer -->
+  <div id="aria-drawer" role="dialog" aria-label="Chat with Aria">
+    <div class="aria-header">
+      <div class="aria-avatar">A</div>
+      <div class="aria-header-text">
+        <div class="aria-header-name">Aria</div>
+        <div class="aria-header-status">● Online</div>
+      </div>
+      <button class="aria-close" id="aria-close" aria-label="Close chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div id="aria-messages"></div>
+    <div class="aria-input-row">
+      <textarea id="aria-input" placeholder="Type a message…" rows="1"></textarea>
+      <button id="aria-send" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#060E1A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // ── Switch this to your Lambda URL after deploying ──────────────────────
+      const API_BASE = 'https://9mqp9z3ad3.execute-api.us-east-1.amazonaws.com';
+
+      const btn     = document.getElementById('aria-btn');
+      const drawer  = document.getElementById('aria-drawer');
+      const closeEl = document.getElementById('aria-close');
+      const msgEl   = document.getElementById('aria-messages');
+      const input   = document.getElementById('aria-input');
+      const sendBtn = document.getElementById('aria-send');
+
+      // Full conversation history stored client-side (works with both local + Lambda)
+      let history = [];
+      let greeted = false;
+      let busy    = false;
+
+      // Toggle drawer
+      btn.addEventListener('click', () => {
+        drawer.classList.add('open');
+        btn.style.display = 'none';
+        if (!greeted) { greet(); greeted = true; }
+        setTimeout(() => input.focus(), 300);
+      });
+      closeEl.addEventListener('click', () => {
+        drawer.classList.remove('open');
+        btn.style.display = 'flex';
+      });
+
+      // Append message bubble
+      function addMsg(text, who) {
+        const el = document.createElement('div');
+        el.className = 'aria-msg ' + who;
+        el.textContent = text;
+        msgEl.appendChild(el);
+        msgEl.scrollTop = msgEl.scrollHeight;
+      }
+
+      // Typing indicator
+      function showTyping() {
+        const el = document.createElement('div');
+        el.className = 'aria-typing';
+        el.id = 'aria-typing-indicator';
+        el.innerHTML = '<span></span><span></span><span></span>';
+        msgEl.appendChild(el);
+        msgEl.scrollTop = msgEl.scrollHeight;
+      }
+      function hideTyping() {
+        const el = document.getElementById('aria-typing-indicator');
+        if (el) el.remove();
+      }
+
+      // Core API call — sends full history, gets reply
+      async function callAria(messages) {
+        const res = await fetch(API_BASE + '/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages }),
+        });
+        return res.json();
+      }
+
+      // Send message to server
+      async function sendMessage(text) {
+        if (busy) return;
+        busy = true;
+        sendBtn.disabled = true;
+
+        addMsg(text, 'user');
+        history.push({ role: 'user', content: text });
+        showTyping();
+
+        try {
+          const data = await callAria(history);
+          hideTyping();
+          addMsg(data.reply, 'bot');
+          history.push({ role: 'assistant', content: data.reply });
+        } catch {
+          hideTyping();
+          addMsg("I'm having trouble connecting — try again in a moment.", 'bot');
+          history.pop(); // remove the user message that failed
+        } finally {
+          busy = false;
+          sendBtn.disabled = false;
+          input.focus();
+        }
+      }
+
+      // Initial greeting
+      async function greet() {
+        busy = true;
+        showTyping();
+        const seed = [{ role: 'user', content: 'hello' }];
+        try {
+          const data = await callAria(seed);
+          hideTyping();
+          addMsg(data.reply, 'bot');
+          history = [...seed, { role: 'assistant', content: data.reply }];
+        } catch {
+          hideTyping();
+          const fallback = "Hi! I'm Aria from Broadhead Automations. What type of business do you run?";
+          addMsg(fallback, 'bot');
+          history = [{ role: 'assistant', content: fallback }];
+        } finally {
+          busy = false;
+        }
+      }
+
+      // Send on button click
+      sendBtn.addEventListener('click', () => {
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        sendMessage(text);
+      });
+
+      // Send on Enter (Shift+Enter = newline)
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          const text = input.value.trim();
+          if (!text) return;
+          input.value = '';
+          sendMessage(text);
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

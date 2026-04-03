@@ -1,2 +1,7 @@
 node_modules/
 temporary screenshots/
+.env
+awscliv2.zip
+aws/
+.lambda-build/
+*.zip
