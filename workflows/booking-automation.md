@@ -104,19 +104,29 @@ All three workflows share the same **booking window**, the same **Data Table** (
 - **Gotcha**: Vapi defaults `serverMessages` to a firehose (speech-update, status-update, transcript, tool-calls, end-of-call-report — dozens per call). MUST PATCH `serverMessages: ["end-of-call-report"]` on the assistant or Sean gets 50–100 Telegram pings per call.
 
 ### Workflow 4: Broadhead — Vapi Booking Backend
-- **n8n ID**: `saHWTOp2soVZu6lT` (9 nodes) — deployed and **active** 2026-04-13; tested end-to-end (real calendar events created in PT)
-- **Purpose**: two webhooks called by Fletcher during a live voice call so the caller can book before hanging up.
+- **n8n ID**: `saHWTOp2soVZu6lT` (19 nodes) — deployed and **active** 2026-04-13; Vapi voice paths tested end-to-end; web paths added 2026-04-14.
+- **Purpose**: Four webhooks — two for Vapi (in-call voice booking) and two for the website's inline calendar popup.
 - **Endpoints**:
-  - `POST /webhook/broadhead-vapi-check-availability` — returns up to 5 open 30-min slots in Sean's Wed/Fri 10–12 + 1–2:30 PT windows
-  - `POST /webhook/broadhead-vapi-book-consultation` — creates the Calendar event, returns Vapi-shaped confirmation
-- **Node graph**:
+  - `POST /webhook/broadhead-vapi-check-availability` — Vapi: returns up to 5 open 30-min slots, Vapi-shaped string
+  - `POST /webhook/broadhead-vapi-book-consultation` — Vapi: creates Calendar event, Vapi-shaped confirmation
+  - `POST /webhook/broadhead-web-availability` — Web: returns structured JSON of open slots grouped by day (14-day lookahead)
+  - `POST /webhook/broadhead-web-book` — Web: creates Calendar event, returns plain JSON `{ok, slot_iso, calendar_event_id, when_display, email}` and Telegram-pings Sean
+- **Node graph** (4 parallel chains):
   ```
-  Webhook: Check Availability → Get Calendar Events → Filter to Broadhead Windows → Respond: Slots
-  Webhook: Book Consultation → Extract Booking Args → Create Calendar Event → Build Confirmation → Respond: Confirmation
+  Webhook: Check Availability (Vapi) → Get Calendar Events → Filter to Broadhead Windows → Respond: Slots
+  Webhook: Book Consultation (Vapi) → Extract Booking Args → Create Calendar Event → Build Confirmation → Respond: Confirmation
+  Webhook: Web Availability → Get Calendar Events Web → Format Web Slots → Respond: Web Slots
+  Webhook: Web Book → Extract Web Args → Create Calendar Event Web → Build Web Confirmation → Notify Sean Web (Telegram) → Respond: Web Booking
   ```
-- **All Vapi responses shape**: `{results: [{toolCallId, result: "<spoken-aloud string>"}]}` (Goody's pattern — Vapi's LLM speaks `result` back to caller naturally).
-- **Empty email handling**: Vapi is voice-only, so `book_consultation` does NOT require `email`. Extract Booking Args builds `attendeesArr = email ? [email] : []`; Create Calendar Event uses `attendees: "={{ $json.attendeesArr }}"` so no attendee is added when email is missing.
-- **No Telegram here** — all notifications consolidated to WF3 at end-of-call to avoid duplicate pings.
+- **Vapi response shape**: `{results: [{toolCallId, result: "<spoken-aloud string>"}]}` (Goody's pattern — Vapi's LLM speaks `result` back to caller).
+- **Web response shapes**:
+  - Availability: `{timezone: "America/Los_Angeles", days: [{date: "2026-04-15", label: "Wed, Apr 15", slots: [{iso, display}]}]}`
+  - Booking: `{ok: true, slot_iso, calendar_event_id, when_display, email}`
+- **Web CORS**: Site client sends `Content-Type: text/plain` (JSON body as string) to avoid OPTIONS preflight. Extract Web Args parses with `JSON.parse(wh.body)`. Both web Respond nodes include `Access-Control-Allow-Origin: *` header. `broadheadautomations.com` + `localhost:3000` both work.
+- **Email handling**:
+  - Vapi `book_consultation` does NOT require email (audio too error-prone). `attendeesArr = email ? [email] : []`.
+  - Web `/broadhead-web-book` REQUIRES a valid email — that's the only contact channel we collect on the website, and `sendUpdates: "all"` depends on it to fire the calendar invite.
+- **Telegram**: WF4's Vapi branches have NO Telegram node — those pings come from WF3 at end-of-call. WF4's Web branch fires its own Telegram ping (via Notify Sean Web) at booking time, since web bookings don't trigger WF3.
 
 ---
 
@@ -392,6 +402,7 @@ For voice (WF3), referral fields live only in the Telegram ping + Vapi's end-of-
 - **Stateless SMS** — conversation state lives only in `broadhead_conversations`. If the row is deleted or the key changes, the next message starts fresh. Keep an eye on phone-number format normalization (always store E.164, never the raw `From`).
 - **n8n Data Table schema is immutable via public API** — after a table is created, `POST/PATCH /data-tables/{id}/columns` returns 404 at every URL variant (project-scoped and non-project-scoped). You CAN add columns through the n8n UI; only the API blocks it. For referral fields we ride inside the existing `conversation_history` JSON blob (WF1 stringifies the whole lead object into that column) rather than request Sean add columns just to ship.
 - **Referral question must come AFTER booking**, not before or during qualification. Asking up-front adds friction and tanks booking rates. Asking post-booking only captures data from booked leads — which is exactly the set that matters for paying referral bonuses. If `Book Consultation` never fires, Fletcher skips the question and records `referral_source="unknown"`.
+- **Plain n8n Webhook node has no built-in CORS** (unlike Chat Trigger which exposes `allowedOrigins`). For browser-initiated JSON POSTs, either: (a) handle OPTIONS preflight manually with `multipleMethods: ["POST","OPTIONS"]` + an IF node routing OPTIONS to a Respond Preflight node, or (b) have the client send `Content-Type: text/plain` with a JSON body string — this is a CORS "simple request" so no preflight fires. WF4's web endpoints use (b): client sends `text/plain`, Extract Web Args runs `JSON.parse(wh.body)`, and both Respond nodes set `Access-Control-Allow-Origin: *` via responseHeaders so the browser exposes the response to JS. Added 2026-04-14.
 - **Vapi requires a registered 11labs credential to use custom cloned voices** — without one, Vapi uses its own ElevenLabs account and returns `"Couldn't Find 11labs Voice"` for any non-stock voiceId. Register via `POST /credential` with provider `11labs`. The credential key must have `user_read` permission (Vapi's validator hits `/v1/user`); restricted keys scoped only to `voices_read` / `text_to_speech` fail validation with 401 → 400. Once a valid 11labs credential exists on the Vapi account, custom voices work without any `credentialId` field on the assistant — Vapi auto-uses the account credential. Attempting to PATCH `voice.credentialId` returns `"voice.property credentialId should not exist"`.
 
 ---

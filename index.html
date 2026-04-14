@@ -702,10 +702,10 @@
         Tell us about your business and we'll show you what's possible with precision AI automation.
       </p>
       <div data-animate="scaleIn" style="animation-delay: 0.3s;">
-        <a href="mailto:sean@broadheadautomations.com" class="btn-primary" style="font-size: 1.125rem; padding: 1rem 2.5rem;">
+        <button type="button" id="bk-trigger" class="btn-primary" style="font-size: 1.125rem; padding: 1rem 2.5rem;">
           Book a Consultation
           <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
+        </button>
       </div>
       <p class="mt-6 flex flex-wrap justify-center items-center gap-x-5 gap-y-2" data-animate="scaleIn" style="animation-delay: 0.4s;">
         <a href="mailto:sean@broadheadautomations.com" class="footer-link text-brand-300" style="font-size: 0.95rem;">sean@broadheadautomations.com</a>
@@ -887,6 +887,541 @@
 
       window.addEventListener('resize', handleResize);
       animate();
+    })();
+  </script>
+
+  <!-- ── Booking Modal ────────────────────────────────────────────────── -->
+  <style>
+    #bk-overlay {
+      position: fixed; inset: 0; z-index: 10001;
+      background: rgba(6,14,26,0.78);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px; opacity: 0; pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    #bk-overlay.open { opacity: 1; pointer-events: auto; }
+
+    #bk-modal {
+      position: relative; width: 100%; max-width: 760px;
+      max-height: calc(100vh - 48px);
+      background: #0A1628; border: 1px solid #1A3048;
+      border-radius: 18px;
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(91,159,216,0.08);
+      transform: translateY(20px) scale(0.97);
+      transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+      font-family: 'Source Sans 3', sans-serif;
+    }
+    #bk-overlay.open #bk-modal { transform: translateY(0) scale(1); }
+
+    #bk-modal::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(91,159,216,0.55), rgba(74,234,237,0.5), rgba(91,159,216,0.55), transparent);
+    }
+
+    .bk-header {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+      padding: 22px 26px 18px; border-bottom: 1px solid #1A3048;
+      flex-shrink: 0;
+    }
+    .bk-header-text { flex: 1; min-width: 0; }
+    .bk-eyebrow {
+      font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em;
+      color: #4AEAED; margin-bottom: 6px;
+    }
+    .bk-title {
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.5rem;
+      color: #E8EFF6; line-height: 1.15;
+    }
+    .bk-sub { font-size: 0.875rem; color: #8aa2b8; margin-top: 4px; }
+    .bk-close {
+      background: none; border: none; cursor: pointer;
+      color: #C8D6E5; opacity: 0.55; padding: 6px;
+      transition: opacity 0.2s, transform 0.25s cubic-bezier(0.16,1,0.3,1);
+      display: flex; align-items: center; flex-shrink: 0;
+    }
+    .bk-close:hover { opacity: 1; transform: rotate(90deg); }
+
+    .bk-body {
+      flex: 1; overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: #1A3048 transparent;
+    }
+
+    .bk-state { display: none; }
+    #bk-modal[data-state="loading"] .bk-state-loading,
+    #bk-modal[data-state="pick"]    .bk-state-pick,
+    #bk-modal[data-state="form"]    .bk-state-form,
+    #bk-modal[data-state="success"] .bk-state-success,
+    #bk-modal[data-state="error"]   .bk-state-error { display: block; }
+
+    .bk-state-loading { padding: 80px 24px; text-align: center; }
+    .bk-spinner {
+      display: inline-block; width: 36px; height: 36px;
+      border: 2px solid #1A3048; border-top-color: #5B9FD8;
+      border-radius: 50%; animation: bkSpin 0.8s linear infinite;
+    }
+    @keyframes bkSpin { to { transform: rotate(360deg); } }
+    .bk-spinner-label {
+      color: #8aa2b8; font-size: 0.875rem; margin-top: 16px;
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
+
+    .bk-pick { display: grid; grid-template-columns: 220px 1fr; min-height: 360px; }
+    .bk-day-rail {
+      border-right: 1px solid #1A3048;
+      padding: 14px 12px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .bk-day-btn {
+      background: none; border: 1px solid transparent; border-radius: 10px;
+      padding: 11px 13px; text-align: left; cursor: pointer;
+      font-family: 'Source Sans 3', sans-serif; color: #C8D6E5;
+      display: flex; flex-direction: column; gap: 2px;
+      transition: background 0.18s, border-color 0.18s, color 0.18s;
+    }
+    .bk-day-btn:hover { background: #0F2035; }
+    .bk-day-btn.active {
+      background: rgba(91,159,216,0.08);
+      border-color: rgba(91,159,216,0.3); color: #E8EFF6;
+    }
+    .bk-day-btn .bk-day-label {
+      font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 0.95rem;
+    }
+    .bk-day-btn .bk-day-count {
+      font-size: 0.7rem; color: #4AEAED; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+
+    .bk-slot-pane { padding: 18px 22px 22px; display: flex; flex-direction: column; gap: 14px; }
+    .bk-slot-day-label {
+      font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 0.95rem;
+      color: #E8EFF6; letter-spacing: 0.02em;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .bk-slot-day-label::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, #1A3048, transparent);
+    }
+    .bk-slot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .bk-slot-pill {
+      background: #0F2035; border: 1px solid #1A3048;
+      border-radius: 10px; padding: 11px 12px;
+      cursor: pointer; color: #C8D6E5;
+      font-family: 'Source Sans 3', sans-serif; font-size: 0.92rem; font-weight: 500;
+      font-variant-numeric: tabular-nums;
+      display: flex; align-items: center; gap: 8px;
+      transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s;
+    }
+    .bk-slot-pill::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: #5B9FD8; box-shadow: 0 0 6px rgba(91,159,216,0.5);
+      flex-shrink: 0;
+      transition: background 0.18s, box-shadow 0.18s;
+    }
+    .bk-slot-pill:hover {
+      background: #0F2840; border-color: rgba(91,159,216,0.45); color: #E8EFF6;
+      transform: translateY(-1px);
+    }
+    .bk-slot-pill:hover::before {
+      background: #4AEAED; box-shadow: 0 0 8px rgba(74,234,237,0.7);
+    }
+
+    .bk-pick-footer {
+      border-top: 1px solid #1A3048; padding: 12px 22px;
+      font-size: 0.78rem; color: #5e7790;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .bk-pick-footer strong { color: #C8D6E5; font-weight: 600; }
+
+    .bk-state-form { padding: 24px 26px 22px; }
+    .bk-summary {
+      background: rgba(91,159,216,0.06);
+      border: 1px solid rgba(91,159,216,0.2);
+      border-radius: 12px; padding: 16px 18px;
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 22px;
+    }
+    .bk-summary-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, #5B9FD8, #4AEAED);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: #060E1A;
+    }
+    .bk-summary-text { flex: 1; min-width: 0; }
+    .bk-summary-when {
+      font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1rem; color: #E8EFF6;
+      font-variant-numeric: tabular-nums;
+    }
+    .bk-summary-meta { font-size: 0.78rem; color: #8aa2b8; margin-top: 2px; }
+
+    .bk-form-row { margin-bottom: 14px; }
+    .bk-label {
+      display: block; font-size: 0.7rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: #8aa2b8; margin-bottom: 6px;
+    }
+    .bk-input {
+      width: 100%; background: #0F2035; border: 1px solid #1A3048;
+      border-radius: 10px; padding: 11px 14px;
+      font-family: 'Source Sans 3', sans-serif; font-size: 0.95rem; color: #E8EFF6;
+      outline: none; transition: border-color 0.2s, background 0.2s;
+    }
+    .bk-input:focus { border-color: #5B9FD8; background: #0F2840; }
+    .bk-input::placeholder { color: #4a5f75; }
+    .bk-input.invalid { border-color: #d56b6b; }
+
+    .bk-form-actions {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin-top: 22px;
+    }
+    .bk-back {
+      background: none; border: none; cursor: pointer;
+      color: #8aa2b8; font-size: 0.875rem; font-family: 'Outfit', sans-serif;
+      padding: 8px 4px; transition: color 0.2s;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .bk-back:hover { color: #E8EFF6; }
+    .bk-confirm {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 22px; border-radius: 9999px;
+      background: #5B9FD8; color: #060E1A; border: none; cursor: pointer;
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.95rem;
+      transition: background 0.2s, transform 0.18s;
+    }
+    .bk-confirm:hover { background: #7AB8E8; transform: translateY(-1px); }
+    .bk-confirm:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    .bk-error-msg { color: #d56b6b; font-size: 0.85rem; margin-top: 10px; min-height: 1.2em; }
+
+    .bk-state-success { padding: 40px 32px 36px; text-align: center; }
+    .bk-check-wrap {
+      width: 64px; height: 64px; margin: 0 auto 18px;
+      border-radius: 50%; background: rgba(74,234,237,0.1);
+      border: 1px solid rgba(74,234,237,0.4);
+      display: flex; align-items: center; justify-content: center;
+      animation: bkPop 0.5s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes bkPop {
+      0% { transform: scale(0.4); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .bk-success-title {
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.5rem;
+      color: #E8EFF6; margin-bottom: 8px;
+    }
+    .bk-success-when {
+      font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1.05rem;
+      color: #4AEAED; font-variant-numeric: tabular-nums; margin-bottom: 14px;
+    }
+    .bk-success-body {
+      color: #C8D6E5; font-size: 0.95rem; line-height: 1.55;
+      max-width: 380px; margin: 0 auto 22px;
+    }
+    .bk-success-body strong { color: #E8EFF6; }
+    .bk-done {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 28px; border-radius: 9999px;
+      background: transparent; color: #5B9FD8;
+      border: 1px solid #5B9FD8; cursor: pointer;
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.95rem;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .bk-done:hover { background: rgba(91,159,216,0.1); color: #7AB8E8; border-color: #7AB8E8; }
+
+    .bk-state-error { padding: 40px 32px 36px; text-align: center; }
+    .bk-err-title {
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.25rem;
+      color: #E8EFF6; margin-bottom: 8px;
+    }
+    .bk-err-body { color: #8aa2b8; font-size: 0.92rem; line-height: 1.6; margin-bottom: 22px; }
+    .bk-err-body a { color: #5B9FD8; text-decoration: underline; }
+
+    @media (max-width: 640px) {
+      #bk-overlay { padding: 12px; align-items: flex-end; }
+      #bk-modal { max-height: calc(100vh - 24px); }
+      .bk-pick { grid-template-columns: 1fr; min-height: 0; }
+      .bk-day-rail {
+        flex-direction: row; overflow-x: auto;
+        border-right: none; border-bottom: 1px solid #1A3048;
+        padding: 12px;
+      }
+      .bk-day-btn { flex-shrink: 0; min-width: 130px; }
+      .bk-slot-grid { grid-template-columns: repeat(2, 1fr); }
+      .bk-header { padding: 18px 20px 14px; }
+      .bk-title { font-size: 1.25rem; }
+      .bk-state-form { padding: 18px 20px; }
+      .bk-form-actions { flex-direction: column-reverse; align-items: stretch; }
+      .bk-confirm { justify-content: center; }
+      .bk-back { justify-content: center; }
+    }
+  </style>
+
+  <div id="bk-overlay" role="dialog" aria-modal="true" aria-labelledby="bk-title" hidden>
+    <div id="bk-modal" data-state="loading">
+      <div class="bk-header">
+        <div class="bk-header-text">
+          <p class="bk-eyebrow">Book a Consultation</p>
+          <h2 id="bk-title" class="bk-title">Pick a time with Sean</h2>
+          <p class="bk-sub">30-minute call · Pacific Time</p>
+        </div>
+        <button class="bk-close" id="bk-close" type="button" aria-label="Close booking">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="bk-body">
+        <div class="bk-state bk-state-loading">
+          <div class="bk-spinner" aria-hidden="true"></div>
+          <div class="bk-spinner-label">Checking Sean's calendar</div>
+        </div>
+
+        <div class="bk-state bk-state-pick">
+          <div class="bk-pick">
+            <div class="bk-day-rail" id="bk-day-rail"></div>
+            <div class="bk-slot-pane">
+              <div class="bk-slot-day-label" id="bk-slot-day-label"></div>
+              <div class="bk-slot-grid" id="bk-slot-grid"></div>
+            </div>
+          </div>
+          <div class="bk-pick-footer">
+            <span><strong>Wed &amp; Fri</strong> · 10–12 + 1–2:30 PT</span>
+            <span>Sean is in North Idaho</span>
+          </div>
+        </div>
+
+        <div class="bk-state bk-state-form">
+          <div class="bk-summary">
+            <div class="bk-summary-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
+            <div class="bk-summary-text">
+              <div class="bk-summary-when" id="bk-summary-when">—</div>
+              <div class="bk-summary-meta">30-min consultation with Sean</div>
+            </div>
+          </div>
+          <form id="bk-form" novalidate>
+            <div class="bk-form-row">
+              <label class="bk-label" for="bk-name">Your name</label>
+              <input class="bk-input" id="bk-name" type="text" autocomplete="name" required />
+            </div>
+            <div class="bk-form-row">
+              <label class="bk-label" for="bk-email">Email</label>
+              <input class="bk-input" id="bk-email" type="email" autocomplete="email" placeholder="you@company.com" required />
+            </div>
+            <div class="bk-error-msg" id="bk-form-error" role="alert"></div>
+            <div class="bk-form-actions">
+              <button type="button" class="bk-back" id="bk-back">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                Pick a different time
+              </button>
+              <button type="submit" class="bk-confirm" id="bk-confirm">
+                <span id="bk-confirm-label">Confirm booking</span>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="bk-state bk-state-success">
+          <div class="bk-check-wrap" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4AEAED" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <h3 class="bk-success-title">You're booked.</h3>
+          <div class="bk-success-when" id="bk-success-when">—</div>
+          <p class="bk-success-body">A calendar invite is on its way to <strong id="bk-success-email">your inbox</strong>. Sean will see you then.</p>
+          <button class="bk-done" id="bk-done" type="button">Done</button>
+        </div>
+
+        <div class="bk-state bk-state-error">
+          <h3 class="bk-err-title">Couldn't reach the calendar</h3>
+          <p class="bk-err-body" id="bk-err-body">Something glitched on our end. Try again in a moment, or email <a href="mailto:sean@broadheadautomations.com">sean@broadheadautomations.com</a> directly.</p>
+          <button class="bk-done" id="bk-retry" type="button">Try again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const AVAIL_URL = 'https://broadheadautomations.app.n8n.cloud/webhook/broadhead-web-availability';
+      const BOOK_URL  = 'https://broadheadautomations.app.n8n.cloud/webhook/broadhead-web-book';
+
+      const overlay = document.getElementById('bk-overlay');
+      const modal = document.getElementById('bk-modal');
+      const trigger = document.getElementById('bk-trigger');
+      const closeBtn = document.getElementById('bk-close');
+      const dayRail = document.getElementById('bk-day-rail');
+      const slotDayLabel = document.getElementById('bk-slot-day-label');
+      const slotGrid = document.getElementById('bk-slot-grid');
+      const summaryWhen = document.getElementById('bk-summary-when');
+      const successWhen = document.getElementById('bk-success-when');
+      const successEmail = document.getElementById('bk-success-email');
+      const form = document.getElementById('bk-form');
+      const nameInput = document.getElementById('bk-name');
+      const emailInput = document.getElementById('bk-email');
+      const formError = document.getElementById('bk-form-error');
+      const confirmBtn = document.getElementById('bk-confirm');
+      const confirmLabel = document.getElementById('bk-confirm-label');
+      const backBtn = document.getElementById('bk-back');
+      const doneBtn = document.getElementById('bk-done');
+      const retryBtn = document.getElementById('bk-retry');
+      const errBody = document.getElementById('bk-err-body');
+
+      let availability = null;
+      let activeDayIdx = 0;
+      let pickedSlot = null;
+
+      function setState(s) { modal.dataset.state = s; }
+
+      async function open() {
+        overlay.hidden = false;
+        requestAnimationFrame(() => overlay.classList.add('open'));
+        document.body.style.overflow = 'hidden';
+        setState('loading');
+        try {
+          const res = await fetch(AVAIL_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: '{}',
+          });
+          if (!res.ok) throw new Error('http ' + res.status);
+          availability = await res.json();
+          renderPick();
+        } catch (e) {
+          errBody.innerHTML = "Couldn't reach the calendar. Try again in a moment, or email <a href=\"mailto:sean@broadheadautomations.com\">sean@broadheadautomations.com</a>.";
+          setState('error');
+        }
+      }
+
+      function close() {
+        overlay.classList.remove('open');
+        document.body.style.overflow = '';
+        setTimeout(() => {
+          overlay.hidden = true;
+          resetState();
+        }, 250);
+      }
+
+      function resetState() {
+        setState('loading');
+        pickedSlot = null;
+        activeDayIdx = 0;
+        nameInput.value = '';
+        emailInput.value = '';
+        formError.textContent = '';
+        nameInput.classList.remove('invalid');
+        emailInput.classList.remove('invalid');
+        confirmBtn.disabled = false;
+        confirmLabel.textContent = 'Confirm booking';
+      }
+
+      function renderPick() {
+        const days = (availability && availability.days) || [];
+        if (days.length === 0) {
+          errBody.innerHTML = "No open slots in the next two weeks. Email <a href=\"mailto:sean@broadheadautomations.com\">sean@broadheadautomations.com</a> and Sean will find a time.";
+          setState('error');
+          return;
+        }
+        activeDayIdx = 0;
+        dayRail.innerHTML = '';
+        days.forEach((day, i) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'bk-day-btn' + (i === 0 ? ' active' : '');
+          btn.dataset.idx = String(i);
+          const cnt = day.slots.length;
+          btn.innerHTML = '<span class="bk-day-label"></span><span class="bk-day-count"></span>';
+          btn.querySelector('.bk-day-label').textContent = day.label;
+          btn.querySelector('.bk-day-count').textContent = cnt + ' open';
+          btn.addEventListener('click', () => selectDay(i));
+          dayRail.appendChild(btn);
+        });
+        renderSlots();
+        setState('pick');
+      }
+
+      function selectDay(i) {
+        activeDayIdx = i;
+        dayRail.querySelectorAll('.bk-day-btn').forEach((el, idx) => {
+          el.classList.toggle('active', idx === i);
+        });
+        renderSlots();
+      }
+
+      function renderSlots() {
+        const day = availability.days[activeDayIdx];
+        slotDayLabel.textContent = day.label;
+        slotGrid.innerHTML = '';
+        day.slots.forEach(slot => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'bk-slot-pill';
+          btn.textContent = slot.display;
+          btn.addEventListener('click', () => pickSlot(slot));
+          slotGrid.appendChild(btn);
+        });
+      }
+
+      function pickSlot(slot) {
+        const day = availability.days[activeDayIdx];
+        pickedSlot = slot;
+        summaryWhen.textContent = day.label + ' · ' + slot.display;
+        formError.textContent = '';
+        setState('form');
+        setTimeout(() => nameInput.focus(), 60);
+      }
+
+      function isValidEmail(s) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+      }
+
+      async function submit(e) {
+        e.preventDefault();
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+        nameInput.classList.toggle('invalid', !name);
+        emailInput.classList.toggle('invalid', !isValidEmail(email));
+        if (!name || !isValidEmail(email)) {
+          formError.textContent = 'Add a name and a valid email so Sean can send you the calendar invite.';
+          return;
+        }
+        formError.textContent = '';
+        confirmBtn.disabled = true;
+        confirmLabel.textContent = 'Booking…';
+        try {
+          const res = await fetch(BOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ name, email, slot_iso: pickedSlot.iso, source: 'web' }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) throw new Error('http ' + res.status);
+          const day = availability.days[activeDayIdx];
+          successWhen.textContent = data.when_display || (day.label + ' · ' + pickedSlot.display);
+          successEmail.textContent = email;
+          setState('success');
+        } catch (err) {
+          formError.textContent = "That didn't go through — try once more, or email sean@broadheadautomations.com.";
+          confirmBtn.disabled = false;
+          confirmLabel.textContent = 'Confirm booking';
+        }
+      }
+
+      if (trigger) trigger.addEventListener('click', open);
+      closeBtn.addEventListener('click', close);
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !overlay.hidden) close();
+      });
+      backBtn.addEventListener('click', () => setState('pick'));
+      form.addEventListener('submit', submit);
+      doneBtn.addEventListener('click', close);
+      retryBtn.addEventListener('click', open);
     })();
   </script>
 

@@ -11,7 +11,7 @@ See `workflows/booking-automation.md` for the master SOP (WF1 chat / WF2 SMS / W
 The chat bot is named **Fletcher** (the craftsman who builds arrows).
 
 ## Current State
-- **Website**: [index.html](index.html) — Fletcher chat UI live; points at the n8n webhook `/webhook/broadhead-chat/chat`. Signal-routing canvas network replaces the old wireframe SVG. Twilio number `208-623-9442` shown in the Contact section.
+- **Website**: [index.html](index.html) — Fletcher chat UI live; points at the n8n webhook `/webhook/broadhead-chat/chat`. Signal-routing canvas network replaces the old wireframe SVG. Twilio number `208-623-9442` shown in the Contact section. **Inline booking modal** (2026-04-14): the "Book a Consultation" CTA (`#bk-trigger`) opens a dark-glass modal with a calendar day rail + 30-min slot pills, collects name + email, and books via WF4's new `/broadhead-web-availability` + `/broadhead-web-book` webhooks. Replaces the old `mailto:` link.
 - **`.env`**: dedicated `BROADHEAD_*` block for Twilio/Vapi/Calendar wiring.
 - **n8n + Vapi**: **voice stack fully live 2026-04-13**.
   - **WF1** (Chat Booking Agent, `hEsEEtfYEldhP8Eb`) — Fletcher chat widget, books on Sean's calendar, Telegram ping via `@BroadheadAutomationsBot`.
