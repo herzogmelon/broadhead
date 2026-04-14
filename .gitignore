@@ -5,3 +5,4 @@ awscliv2.zip
 aws/
 .lambda-build/
 *.zip
+.claude/settings.local.json

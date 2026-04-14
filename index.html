@@ -287,27 +287,241 @@
         </p>
       </div>
 
-      <!-- Decorative SVG (2 cols) -->
+      <!-- Signal-routing automation network -->
       <div class="md:col-span-2 flex justify-center" data-animate="scaleIn" style="animation-delay: 0.2s;">
-        <svg viewBox="0 0 300 340" class="w-full max-w-[280px]" fill="none" aria-hidden="true">
-          <!-- Wireframe broadhead shape -->
-          <polygon points="150,20 260,130 220,310 80,310 40,130" stroke="#5B9FD8" stroke-width="1" fill="none" opacity="0.3"/>
-          <polygon points="150,50 235,135 205,285 95,285 65,135" stroke="#5B9FD8" stroke-width="1" fill="none" opacity="0.2"/>
-          <polygon points="150,80 210,140 190,260 110,260 90,140" stroke="#4AEAED" stroke-width="0.5" fill="none" opacity="0.15"/>
-          <!-- Internal lines -->
-          <line x1="150" y1="20" x2="150" y2="310" stroke="#5B9FD8" stroke-width="0.5" opacity="0.15"/>
-          <line x1="40" y1="130" x2="260" y2="130" stroke="#5B9FD8" stroke-width="0.5" opacity="0.1"/>
-          <line x1="80" y1="310" x2="260" y2="130" stroke="#5B9FD8" stroke-width="0.5" opacity="0.08"/>
-          <line x1="220" y1="310" x2="40" y2="130" stroke="#5B9FD8" stroke-width="0.5" opacity="0.08"/>
-          <!-- Nodes -->
-          <circle cx="150" cy="20" r="4" fill="#5B9FD8" opacity="0.5"/>
-          <circle cx="260" cy="130" r="3" fill="#5B9FD8" opacity="0.3"/>
-          <circle cx="40" cy="130" r="3" fill="#5B9FD8" opacity="0.3"/>
-          <circle cx="220" cy="310" r="3" fill="#4AEAED" opacity="0.25"/>
-          <circle cx="80" cy="310" r="3" fill="#4AEAED" opacity="0.25"/>
-          <circle cx="150" cy="130" r="5" fill="#5B9FD8" opacity="0.4"/>
-        </svg>
+        <canvas id="bh-network" class="w-full max-w-[280px]" style="aspect-ratio: 300 / 340; display: block;" aria-hidden="true"></canvas>
       </div>
+      <script>
+        (function () {
+          const canvas = document.getElementById('bh-network');
+          if (!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+          const BRAND = '91, 159, 216';   // #5B9FD8
+          const ACCENT = '74, 234, 237';  // #4AEAED
+
+          // Anchor layout (viewBox 300x340) — irregular, avoids grid feel
+          const anchors = [
+            { x: 150, y:  34, accent: true  },
+            { x:  58, y:  88 },
+            { x: 238, y:  96 },
+            { x: 102, y: 148, accent: true },
+            { x: 198, y: 156 },
+            { x: 150, y: 188 },
+            { x:  44, y: 206 },
+            { x: 258, y: 214 },
+            { x: 118, y: 252 },
+            { x: 206, y: 258, accent: true },
+            { x:  72, y: 296 },
+            { x: 230, y: 304 },
+          ];
+
+          // k-nearest connections so graph has clear routes, not mesh mess
+          function buildEdges(nodes, k = 3) {
+            const edges = [];
+            const seen = new Set();
+            for (let i = 0; i < nodes.length; i++) {
+              const d = nodes.map((n, j) => ({ j, d: Math.hypot(n.x - nodes[i].x, n.y - nodes[i].y) }))
+                .filter(o => o.j !== i).sort((a, b) => a.d - b.d).slice(0, k);
+              for (const { j } of d) {
+                const key = i < j ? i + ':' + j : j + ':' + i;
+                if (seen.has(key)) continue;
+                seen.add(key);
+                edges.push({ a: Math.min(i, j), b: Math.max(i, j) });
+              }
+            }
+            return edges;
+          }
+
+          const nodes = anchors.map((a, i) => ({
+            i, ax: a.x, ay: a.y, x: a.x, y: a.y, vx: 0, vy: 0,
+            accent: !!a.accent,
+            phase: Math.random() * Math.PI * 2,
+            speed: 0.4 + Math.random() * 0.4,
+            radius: a.accent ? 3.2 : 2.4,
+          }));
+          const edges = buildEdges(nodes, 3);
+
+          // Cursor repulsion
+          const cursor = { x: -9999, y: -9999, active: false };
+          function toLocal(e) {
+            const r = canvas.getBoundingClientRect();
+            cursor.x = ((e.clientX - r.left) / r.width) * 300;
+            cursor.y = ((e.clientY - r.top) / r.height) * 340;
+            cursor.active = true;
+          }
+          canvas.addEventListener('pointermove', toLocal);
+          canvas.addEventListener('pointerleave', () => { cursor.active = false; });
+
+          // Packets traveling along edges
+          const packets = [];
+          function launchPacket() {
+            const e = edges[(Math.random() * edges.length) | 0];
+            const forward = Math.random() < 0.5;
+            packets.push({
+              edge: e, forward,
+              t: 0,
+              duration: 900 + Math.random() * 700,
+              born: performance.now(),
+            });
+          }
+          // Ring pulses on packet arrival
+          const rings = [];
+
+          // DPR-aware sizing
+          function resize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const w = canvas.clientWidth;
+            const h = canvas.clientHeight;
+            canvas.width = Math.round(w * dpr);
+            canvas.height = Math.round(h * dpr);
+            ctx.setTransform(dpr * (w / 300), 0, 0, dpr * (h / 340), 0, 0);
+          }
+          resize();
+          const ro = new ResizeObserver(resize);
+          ro.observe(canvas);
+
+          function drawStatic() {
+            ctx.clearRect(0, 0, 300, 340);
+            // edges
+            for (const e of edges) {
+              const A = nodes[e.a], B = nodes[e.b];
+              ctx.strokeStyle = `rgba(${BRAND}, 0.22)`;
+              ctx.lineWidth = 0.6;
+              ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+            }
+            // nodes
+            for (const n of nodes) {
+              ctx.fillStyle = n.accent ? `rgba(${ACCENT}, 0.75)` : `rgba(${BRAND}, 0.55)`;
+              ctx.beginPath(); ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2); ctx.fill();
+            }
+          }
+
+          if (reducedMotion) {
+            drawStatic();
+            return;
+          }
+
+          let last = performance.now();
+          let nextPacket = last + 400;
+          let running = true;
+
+          document.addEventListener('visibilitychange', () => {
+            running = !document.hidden;
+            if (running) { last = performance.now(); requestAnimationFrame(tick); }
+          });
+
+          function tick(now) {
+            if (!running) return;
+            const dt = Math.min(48, now - last);
+            last = now;
+
+            // Drift — gentle Lissajous around anchor
+            for (const n of nodes) {
+              n.phase += 0.00045 * n.speed * dt;
+              const tx = n.ax + Math.cos(n.phase) * 4.5;
+              const ty = n.ay + Math.sin(n.phase * 1.3) * 3.2;
+
+              // Cursor repulsion
+              if (cursor.active) {
+                const dx = n.x - cursor.x, dy = n.y - cursor.y;
+                const d2 = dx * dx + dy * dy;
+                const R = 70;
+                if (d2 < R * R) {
+                  const d = Math.sqrt(d2) || 0.01;
+                  const force = (1 - d / R) * 2.4;
+                  n.vx += (dx / d) * force;
+                  n.vy += (dy / d) * force;
+                }
+              }
+              // Spring toward target
+              n.vx += (tx - n.x) * 0.06;
+              n.vy += (ty - n.y) * 0.06;
+              n.vx *= 0.82; n.vy *= 0.82;
+              n.x += n.vx; n.y += n.vy;
+            }
+
+            // Emit packets on cadence
+            if (now >= nextPacket) {
+              launchPacket();
+              nextPacket = now + 260 + Math.random() * 520;
+              if (Math.random() < 0.18) launchPacket(); // occasional burst
+            }
+
+            ctx.clearRect(0, 0, 300, 340);
+
+            // Edges — base + highlight if packet on edge
+            const edgeHighlight = new Map();
+            for (const p of packets) {
+              const k = p.edge.a + ':' + p.edge.b;
+              edgeHighlight.set(k, Math.max(edgeHighlight.get(k) || 0, 1 - Math.abs(p.t - 0.5) * 2));
+            }
+            for (const e of edges) {
+              const A = nodes[e.a], B = nodes[e.b];
+              const k = e.a + ':' + e.b;
+              const boost = edgeHighlight.get(k) || 0;
+              ctx.strokeStyle = `rgba(${BRAND}, ${0.14 + boost * 0.38})`;
+              ctx.lineWidth = 0.55 + boost * 0.9;
+              ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+            }
+
+            // Advance packets; on arrival, spawn ring
+            for (let i = packets.length - 1; i >= 0; i--) {
+              const p = packets[i];
+              p.t = (now - p.born) / p.duration;
+              if (p.t >= 1) {
+                const dest = p.forward ? nodes[p.edge.b] : nodes[p.edge.a];
+                rings.push({ x: dest.x, y: dest.y, born: now, duration: 720, accent: dest.accent });
+                packets.splice(i, 1);
+                continue;
+              }
+              const tt = p.forward ? p.t : 1 - p.t;
+              const A = nodes[p.edge.a], B = nodes[p.edge.b];
+              const x = A.x + (B.x - A.x) * tt;
+              const y = A.y + (B.y - A.y) * tt;
+              // Glow trail
+              const grad = ctx.createRadialGradient(x, y, 0, x, y, 8);
+              grad.addColorStop(0, `rgba(${ACCENT}, 0.95)`);
+              grad.addColorStop(1, `rgba(${ACCENT}, 0)`);
+              ctx.fillStyle = grad;
+              ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
+              // Core
+              ctx.fillStyle = `rgba(${ACCENT}, 1)`;
+              ctx.beginPath(); ctx.arc(x, y, 1.6, 0, Math.PI * 2); ctx.fill();
+            }
+
+            // Rings
+            for (let i = rings.length - 1; i >= 0; i--) {
+              const r = rings[i];
+              const t = (now - r.born) / r.duration;
+              if (t >= 1) { rings.splice(i, 1); continue; }
+              const radius = 3 + t * 18;
+              const alpha = (1 - t) * 0.55;
+              ctx.strokeStyle = r.accent ? `rgba(${ACCENT}, ${alpha})` : `rgba(${BRAND}, ${alpha})`;
+              ctx.lineWidth = 1.1 * (1 - t) + 0.3;
+              ctx.beginPath(); ctx.arc(r.x, r.y, radius, 0, Math.PI * 2); ctx.stroke();
+            }
+
+            // Nodes with breathing glow
+            for (const n of nodes) {
+              const pulse = 0.5 + 0.5 * Math.sin(now * 0.0015 + n.phase);
+              const base = n.accent ? ACCENT : BRAND;
+              const glow = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 10);
+              glow.addColorStop(0, `rgba(${base}, ${0.28 + pulse * 0.22})`);
+              glow.addColorStop(1, `rgba(${base}, 0)`);
+              ctx.fillStyle = glow;
+              ctx.beginPath(); ctx.arc(n.x, n.y, 10, 0, Math.PI * 2); ctx.fill();
+              ctx.fillStyle = n.accent ? `rgba(${ACCENT}, 0.95)` : `rgba(${BRAND}, 0.85)`;
+              ctx.beginPath(); ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2); ctx.fill();
+            }
+
+            requestAnimationFrame(tick);
+          }
+
+          requestAnimationFrame(tick);
+        })();
+      </script>
     </div>
   </section>
 
@@ -493,8 +707,10 @@
           <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
       </div>
-      <p class="mt-6" data-animate="scaleIn" style="animation-delay: 0.4s;">
+      <p class="mt-6 flex flex-wrap justify-center items-center gap-x-5 gap-y-2" data-animate="scaleIn" style="animation-delay: 0.4s;">
         <a href="mailto:sean@broadheadautomations.com" class="footer-link text-brand-300" style="font-size: 0.95rem;">sean@broadheadautomations.com</a>
+        <span class="text-silver-200" style="opacity: 0.35;">·</span>
+        <a href="tel:+12086239442" class="footer-link text-brand-300" style="font-size: 0.95rem;">208-623-9442</a>
       </p>
     </div>
   </section>
@@ -674,7 +890,7 @@
     })();
   </script>
 
-  <!-- ── Aria Chat Widget ──────────────────────────────────────────────── -->
+  <!-- ── Fletcher Chat Widget ─────────────────────────────────────────── -->
   <style>
     /* Chat button */
     #aria-btn {
@@ -833,18 +1049,18 @@
   </style>
 
   <!-- Chat button -->
-  <button id="aria-btn" aria-label="Chat with Aria">
+  <button id="aria-btn" aria-label="Chat with Fletcher">
     <svg viewBox="0 0 24 24" fill="none" stroke="#4AEAED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
     </svg>
   </button>
 
   <!-- Chat drawer -->
-  <div id="aria-drawer" role="dialog" aria-label="Chat with Aria">
+  <div id="aria-drawer" role="dialog" aria-label="Chat with Fletcher">
     <div class="aria-header">
-      <div class="aria-avatar">A</div>
+      <div class="aria-avatar">F</div>
       <div class="aria-header-text">
-        <div class="aria-header-name">Aria</div>
+        <div class="aria-header-name">Fletcher</div>
         <div class="aria-header-status">● Online</div>
       </div>
       <button class="aria-close" id="aria-close" aria-label="Close chat">
@@ -866,8 +1082,7 @@
 
   <script>
     (function () {
-      // ── Switch this to your Lambda URL after deploying ──────────────────────
-      const API_BASE = 'https://9mqp9z3ad3.execute-api.us-east-1.amazonaws.com';
+      const CHAT_WEBHOOK = 'https://broadheadautomations.app.n8n.cloud/webhook/broadhead-chat/chat';
 
       const btn     = document.getElementById('aria-btn');
       const drawer  = document.getElementById('aria-drawer');
@@ -876,8 +1091,14 @@
       const input   = document.getElementById('aria-input');
       const sendBtn = document.getElementById('aria-send');
 
-      // Full conversation history stored client-side (works with both local + Lambda)
-      let history = [];
+      const SESSION_KEY = 'broadhead-fletcher-session';
+      let sessionId = sessionStorage.getItem(SESSION_KEY);
+      if (!sessionId) {
+        sessionId = (crypto.randomUUID && crypto.randomUUID()) ||
+          ('s-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10));
+        sessionStorage.setItem(SESSION_KEY, sessionId);
+      }
+
       let greeted = false;
       let busy    = false;
 
@@ -955,22 +1176,17 @@
           return;
         }
         document.getElementById('aria-lead-card').remove();
-        try {
-          await fetch(API_BASE + '/lead', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, phone }),
-          });
-        } catch { /* silent — don't break chat */ }
-        addMsg("Thanks! Sean will reach out to you soon.", 'bot');
+        const payload = [name && `Name: ${name}`, email && `Email: ${email}`, phone && `Phone: ${phone}`]
+          .filter(Boolean).join(' | ');
+        sendMessage('Lead details — ' + payload);
       }
 
-      // Core API call — sends full history, gets reply
-      async function callAria(messages) {
-        const res = await fetch(API_BASE + '/chat', {
+      // Core API call — n8n chat trigger owns conversation memory
+      async function callFletcher(text) {
+        const res = await fetch(CHAT_WEBHOOK, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages }),
+          body: JSON.stringify({ sessionId, action: 'sendMessage', chatInput: text }),
         });
         return res.json();
       }
@@ -982,18 +1198,16 @@
         sendBtn.disabled = true;
 
         addMsg(text, 'user');
-        history.push({ role: 'user', content: text });
         showTyping();
 
         try {
-          const data = await callAria(history);
+          const data = await callFletcher(text);
           hideTyping();
-          addMsg(data.reply, 'bot');
-          history.push({ role: 'assistant', content: data.reply });
+          const reply = (data && (data.output || data.reply)) || "I'm back — can you say that again?";
+          addMsg(reply, 'bot');
         } catch {
           hideTyping();
           addMsg("I'm having trouble connecting — try again in a moment.", 'bot');
-          history.pop(); // remove the user message that failed
         } finally {
           busy = false;
           sendBtn.disabled = false;
@@ -1005,17 +1219,15 @@
       async function greet() {
         busy = true;
         showTyping();
-        const seed = [{ role: 'user', content: 'hello' }];
         try {
-          const data = await callAria(seed);
+          const data = await callFletcher('hello');
           hideTyping();
-          addMsg(data.reply, 'bot');
-          history = [...seed, { role: 'assistant', content: data.reply }];
+          const reply = (data && (data.output || data.reply)) ||
+            "Hi! I'm Fletcher from Broadhead Automations. What type of business do you run?";
+          addMsg(reply, 'bot');
         } catch {
           hideTyping();
-          const fallback = "Hi! I'm Aria from Broadhead Automations. What type of business do you run?";
-          addMsg(fallback, 'bot');
-          history = [{ role: 'assistant', content: fallback }];
+          addMsg("Hi! I'm Fletcher from Broadhead Automations. What type of business do you run?", 'bot');
         } finally {
           busy = false;
         }

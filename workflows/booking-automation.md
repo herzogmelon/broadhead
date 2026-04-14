@@ -231,7 +231,7 @@ Both are AI-tool-connected Google Calendar nodes using Sean's OAuth2 credential.
 - **Phone number**: `+12087389168` (Vapi-provisioned, ID `dc1e01e3-5596-47ee-9ad7-0584855128d5`, saved to `.env` as `BROADHEAD_VAPI_INBOUND_NUMBER`)
 - **Name**: "Broadhead — Fletcher"
 - **Model**: gpt-4o (OpenAI)
-- **Voice**: ElevenLabs Rachel (`21m00Tcm4TlvDq8ikWAM`), model `eleven_turbo_v2_5`, stability 0.75, similarityBoost 0.85, style 0.2, speakerBoost on
+- **Voice**: Sean's cloned ElevenLabs voice (`lrw4QA6yLWwXQobivuRe`, professional clone in Sean's 11labs account), model `eleven_turbo_v2_5`, stability 0.75, similarityBoost 0.85, style 0.2, speakerBoost on. Requires a Vapi credential registered for provider `11labs` using a full-scope key (`user_read` + `text_to_speech` + `voices_read`) — the restricted `ELEVENLABS_API_KEY` used by social-media-team lacks `user_read` and fails Vapi's credential validator. Full-scope key lives in `.env` as `ELEVENLABS_API_KEY_VAPI`.
 - **Transcriber**: Deepgram flux-general-en
 - **backgroundSound**: `"off"` (explicit, else default "office" ambience plays)
 - **backgroundDenoisingEnabled**: true
@@ -268,7 +268,7 @@ Sean called `+12087389168` from his cell → Fletcher booked a real 30-min slot 
 |---|---|
 | Automation | n8n Cloud (`broadheadautomations.app.n8n.cloud`) |
 | AI routing | OpenRouter → Gemini 2.5 Flash (chat + SMS), gpt-4o (Vapi voice) |
-| Voice | Vapi.ai + ElevenLabs Rachel |
+| Voice | Vapi.ai + ElevenLabs (Sean's cloned voice) |
 | SMS / telephony | Twilio (208 area code, `+12086239442`) |
 | Scheduling | Google Calendar (Sean's primary) |
 | Confirmation email | Gmail node (Sean's Google OAuth, same creds as Calendar) |
@@ -335,7 +335,7 @@ For voice (WF3), referral fields live only in the Telegram ping + Vapi's end-of-
 - [ ] n8n credential: Notion
 - [ ] n8n credential: Telegram
 - [ ] n8n Data Table `broadhead_conversations` created
-- [x] Vapi assistant `30843d88-531d-4f6f-a086-dda77d7cc205` configured (gpt-4o + ElevenLabs Rachel, `backgroundSound:"off"`, `serverMessages:["end-of-call-report"]`), assistant ID in `.env`
+- [x] Vapi assistant `30843d88-531d-4f6f-a086-dda77d7cc205` configured (gpt-4o + Sean's cloned ElevenLabs voice, `backgroundSound:"off"`, `serverMessages:["end-of-call-report"]`), assistant ID in `.env`
 - [x] Vapi inbound phone number provisioned: `+12087389168`, saved to `.env` as `BROADHEAD_VAPI_INBOUND_NUMBER`
 - [ ] Twilio A2P 10DLC registration submitted
 - [ ] Twilio messaging webhook pointed at `/webhook/broadhead-sms-in`
@@ -373,6 +373,7 @@ For voice (WF3), referral fields live only in the Telegram ping + Vapi's end-of-
 - **n8n API `PUT /workflows/{id}` rejects extra settings keys** — WF1's settings had `callerPolicy`, `availableInMCP`, `binaryMode` (all valid in the UI) but the PUT endpoint returns 400 `"settings must NOT have additional properties"`. Strip to the API-allowed subset (`executionOrder`, `saveDataErrorExecution`, `saveDataSuccessExecution`, `saveManualExecutions`, `saveExecutionProgress`, `timezone`, `executionTimeout`, `errorWorkflow`, `callerPolicy`) before PUT.
 - **Google Calendar display timezone reverts** — Sean's Google Calendar kept reverting to Eastern Time display even after we fixed it last session. Events are stored correctly with `"timeZone": "America/Los_Angeles"`, but the UI renders them offset by +3h. Fix (display-only): calendar.google.com → ⚙️ Settings → General → Time zone → Pacific. Re-check after any Google Account setting change.
 - **Voice agent — phone only, no email** — email addresses are too error-prone over the phone. `book_consultation` does NOT require `email`; Fletcher is prompted to collect only the callback number and silently read it back after the caller answers (no "I'll repeat that back" preamble). Chat agent still accepts phone OR email (either works; no both-required pressure).
+- **Phone-number readback must be digit-by-digit with ellipsis pauses** — first live test (2026-04-13) Fletcher chunked the number ("two-oh-eight, five-fifty-five, twelve thirty-four") and callers couldn't verify. The systemMessage now instructs an explicit format: `"Got it — that's 2... 0... 8... 5... 5... 5... 1... 2... 3... 4, correct?"` — ElevenLabs pauses on the `...` punctuation. Do NOT let the prompt drift back to grouped-digit phrasing.
 - **Fletcher opens with a booking offer** — both voice firstMessage and WF1 chat system prompt ask "Would you like to schedule a 30-minute consultation?" before any qualification. Qualification only starts after the visitor/caller says yes.
 - **Google Calendar node `calendar` field** — use `{"__rl": true, "value": "sean@broadheadautomations.com", "mode": "list", "cachedResultName": "sean@broadheadautomations.com"}`. The `"primary"` string with `mode: "id"` is rejected by the UI validator with "Not a valid google calendar id". Deploy with the actual email.
 - **n8n API activation is blocked on `googleCalendarTool` nodes that use `$fromAI` in their required dateTime fields** (`timeMin`/`timeMax` for availability, `start`/`end` for create). The activation endpoint returns `"Missing or invalid required parameters"` even though the node config is structurally valid. Goody's `AMMOTrhbDAAi77Xh` hits the same error (identical node pattern). Workaround: **activate via the n8n UI toggle**, which appears to use a looser validator. If UI activation also fails, options are (a) wrap the Calendar calls in a sub-workflow that the AI Agent invokes via `Call n8n Workflow Tool`, or (b) skip the tool variant and make the AI Agent emit structured JSON that a downstream Google Calendar node consumes with static expressions.
@@ -391,6 +392,7 @@ For voice (WF3), referral fields live only in the Telegram ping + Vapi's end-of-
 - **Stateless SMS** — conversation state lives only in `broadhead_conversations`. If the row is deleted or the key changes, the next message starts fresh. Keep an eye on phone-number format normalization (always store E.164, never the raw `From`).
 - **n8n Data Table schema is immutable via public API** — after a table is created, `POST/PATCH /data-tables/{id}/columns` returns 404 at every URL variant (project-scoped and non-project-scoped). You CAN add columns through the n8n UI; only the API blocks it. For referral fields we ride inside the existing `conversation_history` JSON blob (WF1 stringifies the whole lead object into that column) rather than request Sean add columns just to ship.
 - **Referral question must come AFTER booking**, not before or during qualification. Asking up-front adds friction and tanks booking rates. Asking post-booking only captures data from booked leads — which is exactly the set that matters for paying referral bonuses. If `Book Consultation` never fires, Fletcher skips the question and records `referral_source="unknown"`.
+- **Vapi requires a registered 11labs credential to use custom cloned voices** — without one, Vapi uses its own ElevenLabs account and returns `"Couldn't Find 11labs Voice"` for any non-stock voiceId. Register via `POST /credential` with provider `11labs`. The credential key must have `user_read` permission (Vapi's validator hits `/v1/user`); restricted keys scoped only to `voices_read` / `text_to_speech` fail validation with 401 → 400. Once a valid 11labs credential exists on the Vapi account, custom voices work without any `credentialId` field on the assistant — Vapi auto-uses the account credential. Attempting to PATCH `voice.credentialId` returns `"voice.property credentialId should not exist"`.
 
 ---
 
