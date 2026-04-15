@@ -1160,9 +1160,9 @@
     <div id="bk-modal" data-state="loading">
       <div class="bk-header">
         <div class="bk-header-text">
-          <p class="bk-eyebrow">Book a Consultation</p>
+          <p class="bk-eyebrow">Book a Discovery Call</p>
           <h2 id="bk-title" class="bk-title">Pick a time with Sean</h2>
-          <p class="bk-sub">30-minute call · Pacific Time</p>
+          <p class="bk-sub">1-hour call</p>
         </div>
         <button class="bk-close" id="bk-close" type="button" aria-label="Close booking">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1185,7 +1185,7 @@
             </div>
           </div>
           <div class="bk-pick-footer">
-            <span><strong>Wed &amp; Fri</strong> · 10–12 + 1–2:30 PT</span>
+            <span><strong>Wed &amp; Fri</strong> · 10am, 11am, 1pm, 2pm</span>
             <span>Sean is in North Idaho</span>
           </div>
         </div>
@@ -1199,7 +1199,7 @@
             </div>
             <div class="bk-summary-text">
               <div class="bk-summary-when" id="bk-summary-when">—</div>
-              <div class="bk-summary-meta">30-min consultation with Sean</div>
+              <div class="bk-summary-meta">1-hour discovery call with Sean</div>
             </div>
           </div>
           <form id="bk-form" novalidate>
@@ -1758,11 +1758,11 @@
           const data = await callFletcher('hello');
           hideTyping();
           const reply = (data && (data.output || data.reply)) ||
-            "Hi! I'm Fletcher from Broadhead Automations. What type of business do you run?";
+            "Hey, this is Fletcher, Sean's AI assistant at Broadhead. Would you like to schedule a discovery call with Sean?";
           addMsg(reply, 'bot');
         } catch {
           hideTyping();
-          addMsg("Hi! I'm Fletcher from Broadhead Automations. What type of business do you run?", 'bot');
+          addMsg("Hey, this is Fletcher, Sean's AI assistant at Broadhead. Would you like to schedule a discovery call with Sean?", 'bot');
         } finally {
           busy = false;
         }

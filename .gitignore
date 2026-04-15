@@ -6,3 +6,4 @@ aws/
 .lambda-build/
 *.zip
 .claude/settings.local.json
+context/fletcher-assistant-*.json
