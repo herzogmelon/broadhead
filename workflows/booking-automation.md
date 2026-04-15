@@ -156,18 +156,17 @@ IF phone present AND channel != "sms"  → Twilio Send SMS
 ## AI Agent — system prompt outline (identical across WF1 & WF2)
 
 - Identity: **"Fletcher, Sean's AI assistant at Broadhead Automations."**
-- 5-question qualification (one at a time, in order):
-  1. What type of business do you run?
-  2. What's the most time-consuming task your team handles manually right now?
-  3. How many hours a week does that eat?
-  4. How big is your team?
-  5. What's the best **name, email, and phone** to reach you at? *(both contacts; hard-require at least one of email/phone before booking, politely ask once for the other)*
+- 3-question qualification — small-biz-first (solo + micro, 1–5 people). ICP is owner-operators, not mid-size teams. Ask one at a time, in order:
+  1. **What do you do, and how are customers finding you today?** *(one turn, two-part answer is fine; captures business type + acquisition channel together into `business_type`)*
+  2. **Where are you stuck right now — leads slipping through, no time to keep up, or hitting a ceiling?** *(pick-one frame; small operators self-diagnose faster than inventing an answer; maps to `pain_point`)*
+  3. **What's the best name, email, and number to get you booked with Sean?** *(hard-require at least one of email/phone; politely ask once for the other)*
 - After qualification → pitch a 30-minute consult with Sean.
 - Booking window: **Wed / Fri, 10:00–12:00 and 13:00–14:30 America/Los_Angeles, 30-min slots** (no Thursday). Always offer two concrete times.
 - Tool-use order: `Check Availability` → offer slots → `Validate Slot` → `Book Consultation`.
 - If user asks for a time outside the window → call `Validate Slot`, use its `nearest_valid` list, and offer the two closest valid alternatives.
 - **Step 6 (post-booking) — Referral question**: immediately after `Book Consultation` succeeds, Fletcher asks "how did you hear about us?" exactly once. If the answer names a person/friend → ONE follow-up for the referrer's name. Normalize the raw answer into one of: `referral | google | social | podcast | event | other | unknown`. Store caller's verbatim words in `referral_raw`; populate `referrer_name` only when `referral_source=referral`. Never re-ask. If booking did not happen, skip the question and set `referral_source="unknown"`.
-- End-of-conversation marker (last turn only): `<<<CAPTURE>>>{"name","email","phone","business_type","pain_point","hours_per_week","team_size","booking_id","slot_iso","referral_source","referrer_name","referral_raw","source":"chat|sms|voice"}<<<END>>>`
+- End-of-conversation marker (last turn only): `<<<CAPTURE>>>{"name","email","phone","business_type","pain_point","booking_id","slot_iso","referral_source","referrer_name","referral_raw","source":"chat|sms|voice"}<<<END>>>`
+  - `hours_per_week` and `team_size` were deprecated 2026-04-15 (mid-market framing); Q1's richer answer now lives entirely in `business_type`.
 
 ### Prepare Context (Set node, both WF1 & WF2)
 
@@ -230,7 +229,7 @@ Both are AI-tool-connected Google Calendar nodes using Sean's OAuth2 credential.
 | Tool name (as seen by AI) | Operation | Key params |
 |---|---|---|
 | `Check Availability` | `getAll` | `calendar=BROADHEAD_CONSULT_CALENDAR_ID`, `timeMin={{ $now.toISO() }}`, `timeMax={{ $now.plus({ days: 14 }).toISO() }}`, `singleEvents=true` |
-| `Book Consultation` | `create` | `calendar=BROADHEAD_CONSULT_CALENDAR_ID`, `summary=Broadhead Consult — {{name}}`, `description={{business_type}} \| {{pain_point}} \| {{hours_per_week}} \| team {{team_size}}`, `attendees=[{{email}}]`, `start={{slot_iso}}`, `duration=30`, `timezone=America/Los_Angeles`, `sendUpdates=all` |
+| `Book Consultation` | `create` | `calendar=BROADHEAD_CONSULT_CALENDAR_ID`, `summary=Broadhead Consult — {{name}}`, `description={{business_type}} \| pain: {{pain_point}}`, `attendees=[{{email}}]`, `start={{slot_iso}}`, `duration=30`, `timezone=America/Los_Angeles`, `sendUpdates=all` |
 
 ---
 
@@ -241,18 +240,18 @@ Both are AI-tool-connected Google Calendar nodes using Sean's OAuth2 credential.
 - **Phone number**: `+12087389168` (Vapi-provisioned, ID `dc1e01e3-5596-47ee-9ad7-0584855128d5`, saved to `.env` as `BROADHEAD_VAPI_INBOUND_NUMBER`)
 - **Name**: "Broadhead — Fletcher"
 - **Model**: gpt-4o (OpenAI)
-- **Voice**: Sean's cloned ElevenLabs voice (`lrw4QA6yLWwXQobivuRe`, professional clone in Sean's 11labs account), model `eleven_turbo_v2_5`, stability 0.75, similarityBoost 0.85, style 0.2, speakerBoost on. Requires a Vapi credential registered for provider `11labs` using a full-scope key (`user_read` + `text_to_speech` + `voices_read`) — the restricted `ELEVENLABS_API_KEY` used by social-media-team lacks `user_read` and fails Vapi's credential validator. Full-scope key lives in `.env` as `ELEVENLABS_API_KEY_VAPI`.
+- **Voice**: Sean's cloned ElevenLabs voice (`lrw4QA6yLWwXQobivuRe`, professional clone in Sean's 11labs account), model `eleven_turbo_v2_5`, stability **0.45** (was 0.75 — lowered 2026-04-14 so prosody follows `<break>` tags), similarityBoost 0.85, style 0.2, speakerBoost on. **`enableSsmlParsing: true`** (CRITICAL — defaults to false on Vapi, which makes ElevenLabs read `<break time="0.4s" />` literally instead of pausing). Requires a Vapi credential registered for provider `11labs` using a full-scope key (`user_read` + `text_to_speech` + `voices_read`) — the restricted `ELEVENLABS_API_KEY` used by social-media-team lacks `user_read` and fails Vapi's credential validator. Full-scope key lives in `.env` as `ELEVENLABS_API_KEY_VAPI`.
 - **Transcriber**: Deepgram flux-general-en
 - **backgroundSound**: `"off"` (explicit, else default "office" ambience plays)
 - **backgroundDenoisingEnabled**: true
 - **serverMessages**: `["end-of-call-report"]` — MUST be set explicitly or WF3 gets flooded with every transcript/speech/status event
-- **firstMessage**: *"Hey, thanks for calling Broadhead Automations! I'm Fletcher, Sean's AI assistant. Would you like to schedule a 30-minute consultation with Sean, or is there something else I can help with?"*
+- **firstMessage**: *"Thanks for calling Broadhead Automations — I'm Fletcher, Sean's AI assistant. Want to book a quick call with Sean, or is there something else?"* (Updated 2026-04-15 — tightened for small-biz ICP; "quick call" lowers commitment vs. "schedule a consultation".)
 - **Custom function tools** (v2 — in-call booking, not just intent capture):
   - `check_availability` → `POST /webhook/broadhead-vapi-check-availability` (no args; returns 5 open slots)
-  - `book_consultation` → `POST /webhook/broadhead-vapi-book-consultation` (required: name, phone, business_type, pain_point, slot_iso; optional: hours_per_week, team_size, notes; **no email required** — audio too noisy)
+  - `book_consultation` → `POST /webhook/broadhead-vapi-book-consultation` (required: name, phone, business_type, pain_point, slot_iso; optional: notes; **no email required** — audio too noisy. `hours_per_week` + `team_size` deprecated 2026-04-15.)
 - **Server URL** (for end-of-call report): `https://broadheadautomations.app.n8n.cloud/webhook/broadhead-vapi-callend`
-- **System prompt shape**: greeting asks if they want to book → only after yes, qualify (name → business → pain → hours/wk → team size → callback number + silent read-back for confirmation) → offer two concrete slots → book → **post-booking referral question ("how did you hear about us?") with follow-up for referrer's name** → "Talk soon!"
-- **Structured data schema**: `{name, email, phone, business_type, pain_point, hours_per_week, team_size, booked, booked_slot_iso, notes, referral_source, referrer_name, referral_raw}`
+- **System prompt shape**: greeting offers to book → only after yes, qualify in 3 turns (name → business + how-customers-find-you → pick-one stuck point → callback number + silent read-back) → offer two concrete slots → book → **post-booking referral question ("how did you hear about us?") with follow-up for referrer's name** → "Talk soon!"
+- **Structured data schema**: `{name, email, phone, business_type, pain_point, booked, booked_slot_iso, notes, referral_source, referrer_name, referral_raw}`
   - `referral_source` normalized to one of: `referral | google | social | podcast | event | other | unknown`
   - `referrer_name` populated ONLY when `referral_source=referral`
   - `referral_raw` = caller's verbatim words, pre-normalization (for Sean to audit Fletcher's classification)
@@ -383,8 +382,34 @@ For voice (WF3), referral fields live only in the Telegram ping + Vapi's end-of-
 - **n8n API `PUT /workflows/{id}` rejects extra settings keys** — WF1's settings had `callerPolicy`, `availableInMCP`, `binaryMode` (all valid in the UI) but the PUT endpoint returns 400 `"settings must NOT have additional properties"`. Strip to the API-allowed subset (`executionOrder`, `saveDataErrorExecution`, `saveDataSuccessExecution`, `saveManualExecutions`, `saveExecutionProgress`, `timezone`, `executionTimeout`, `errorWorkflow`, `callerPolicy`) before PUT.
 - **Google Calendar display timezone reverts** — Sean's Google Calendar kept reverting to Eastern Time display even after we fixed it last session. Events are stored correctly with `"timeZone": "America/Los_Angeles"`, but the UI renders them offset by +3h. Fix (display-only): calendar.google.com → ⚙️ Settings → General → Time zone → Pacific. Re-check after any Google Account setting change.
 - **Voice agent — phone only, no email** — email addresses are too error-prone over the phone. `book_consultation` does NOT require `email`; Fletcher is prompted to collect only the callback number and silently read it back after the caller answers (no "I'll repeat that back" preamble). Chat agent still accepts phone OR email (either works; no both-required pressure).
-- **Phone-number readback must be digit-by-digit with ellipsis pauses** — first live test (2026-04-13) Fletcher chunked the number ("two-oh-eight, five-fifty-five, twelve thirty-four") and callers couldn't verify. The systemMessage now instructs an explicit format: `"Got it — that's 2... 0... 8... 5... 5... 5... 1... 2... 3... 4, correct?"` — ElevenLabs pauses on the `...` punctuation. Do NOT let the prompt drift back to grouped-digit phrasing.
-- **Fletcher skips the yes/no booking gate on chat** — the WF1 system prompt now opens with a one-line greeting and dives straight into qualification Q1 ("What type of business do you run?"). The old "Would you like to schedule a 30-minute consultation?" gate added friction and cost one bubble before any data capture. Voice firstMessage still asks the gate because phone callers expect to be asked why they're on the line. Updated 2026-04-13.
+- **Phone-number readback dropped entirely; date/time readback uses `<break>` SSML** — three live-call iterations on 2026-04-13/14:
+  1. First call: Fletcher chunked the number ("two-oh-eight, five-fifty-five") — caller couldn't verify
+  2. Patched to `2... 0... 8...` ellipsis pauses → second call still ran digits together (`eleven_turbo_v2_5` at stability 0.75 ignores ellipses)
+  3. Patched to `<break time="0.4s" />` SSML → third call read the tags out loud literally ("less than break time…") because `voice.enableSsmlParsing` defaults to `false`. PATCHed to `true` → fourth call still mangled the digits
+  4. Sean called it: drop the readback. Phones are too lossy over voice — capture-and-trust beats capture-and-confirm. Structured-data extraction handles correctness; if the number is wrong, the SMS confirmation bounces and we follow up
+  - Final state (2026-04-14 evening, deployed via `tools/vapi-fletcher-update.py`):
+    - `voice.stability: 0.45` (was 0.75)
+    - `voice.enableSsmlParsing: true` (Vapi default is false — without this, any SSML in messages is read literally)
+    - SystemMessage instructs Fletcher to **acknowledge the phone with a short "got it" and move on — no readback, no digit-by-digit confirmation**
+    - Date/time readback DOES use `<break time="0.3s" />` between units: `Booked you for Wednesday <break time="0.3s" /> April fifteenth <break time="0.3s" /> at one PM Pacific — correct?` (date readback works fine since it's only ~3 units, not 10 digits)
+  - Pre-edit snapshots of the assistant config live in `context/fletcher-assistant-{ts}.json` for rollback / drift audits
+- **Fletcher skips the yes/no booking gate on chat** — the WF1 system prompt now opens with a one-line greeting and dives straight into qualification Q1 ("What do you do, and how are customers finding you today?"). The old "Would you like to schedule a 30-minute consultation?" gate added friction and cost one bubble before any data capture. Voice firstMessage still asks the gate because phone callers expect to be asked why they're on the line. Updated 2026-04-13, Q1 wording updated 2026-04-15.
+- **Small-biz-first qualification rewrite** (2026-04-15) — the original five questions ("type of business", "time-consuming task your team does", "hours/week", "team size", contact) were mid-market framing: "team" presumed structure, "hours/week × wage" presumed payroll-cost ROI math. Sean's actual ICP is solos + micro (1–5 people) where the owner *is* the team. Rewrote to 3 questions that map to the three pains Sean actually sells against (missed follow-up, growth ceiling, personal bandwidth):
+  1. *"What do you do, and how are customers finding you today?"* — double-duty: business type + acquisition channel in one turn.
+  2. *"Where are you stuck right now — leads slipping through, no time to keep up, or hitting a ceiling?"* — pick-one frame so small operators self-diagnose instead of inventing an answer.
+  3. *"Best name, email, and number to get you booked with Sean?"*
+  Deprecated `hours_per_week` and `team_size` fields across the CAPTURE marker, WF1 Book Consultation description, Vapi `book_consultation` tool schema, and WF4 Extract/Create/Confirm nodes. Q1's richer answer now lives entirely in `business_type`. Old 5-question list preserved in the Archived Variants section below for rollback.
+
+### Archived Variants
+
+**Pre-2026-04-15 qualification (mid-market framing, deprecated):**
+1. What type of business do you run?
+2. What's the most time-consuming task your team handles manually right now?
+3. How many hours a week does that eat?
+4. How big is your team?
+5. What's the best name, email, and phone to reach you at?
+
+Roll back only if the small-biz-first version measurably underperforms on booking rate AND Sean's ICP shifts back to mid-size teams.
 - **Google Calendar node `calendar` field** — use `{"__rl": true, "value": "sean@broadheadautomations.com", "mode": "list", "cachedResultName": "sean@broadheadautomations.com"}`. The `"primary"` string with `mode: "id"` is rejected by the UI validator with "Not a valid google calendar id". Deploy with the actual email.
 - **n8n API activation is blocked on `googleCalendarTool` nodes that use `$fromAI` in their required dateTime fields** (`timeMin`/`timeMax` for availability, `start`/`end` for create). The activation endpoint returns `"Missing or invalid required parameters"` even though the node config is structurally valid. Goody's `AMMOTrhbDAAi77Xh` hits the same error (identical node pattern). Workaround: **activate via the n8n UI toggle**, which appears to use a looser validator. If UI activation also fails, options are (a) wrap the Calendar calls in a sub-workflow that the AI Agent invokes via `Call n8n Workflow Tool`, or (b) skip the tool variant and make the AI Agent emit structured JSON that a downstream Google Calendar node consumes with static expressions.
 
