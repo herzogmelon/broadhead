@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms &amp; Conditions — Broadhead Automations</title>
+  <meta name="description" content="Terms that govern your use of Broadhead Automations' website, chat, and SMS services.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: { 950: '#060E1A', 900: '#0A1628', 800: '#0F2035', 700: '#1A3048' },
+            brand: { 500: '#5B9FD8', 400: '#7AB8E8', 300: '#A8D4F5' },
+            accent: { cyan: '#4AEAED' },
+            silver: { 200: '#C8D6E5', 100: '#E8EFF6' },
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Source Sans 3', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Source Sans 3', sans-serif; background: #060E1A; color: #C8D6E5; overflow-x: hidden; }
+
+    .noise-overlay {
+      position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
+
+    .font-display { font-family: 'Outfit', sans-serif; }
+    .heading-hero { font-size: clamp(2.25rem, 5vw, 3.25rem); font-weight: 800; line-height: 1.05; letter-spacing: -0.02em; }
+    .heading-sub { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; }
+    .label-overline { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: #A8D4F5; }
+
+    .prose h2 { font-family: 'Outfit', sans-serif; font-size: 1.375rem; font-weight: 700; color: #E8EFF6; margin-top: 2.5rem; margin-bottom: 0.75rem; letter-spacing: -0.01em; }
+    .prose h2:first-child { margin-top: 0; }
+    .prose h3 { font-family: 'Outfit', sans-serif; font-size: 1.0625rem; font-weight: 600; color: #E8EFF6; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    .prose p { font-size: 1.0625rem; line-height: 1.75; color: #C8D6E5; margin-bottom: 1rem; }
+    .prose p.intro { font-size: 1.125rem; color: #E8EFF6; opacity: 0.88; }
+    .prose ul { margin: 0.5rem 0 1.25rem 1.5rem; }
+    .prose ul li { font-size: 1.0625rem; line-height: 1.75; color: #C8D6E5; margin-bottom: 0.375rem; }
+    .prose a { color: #7AB8E8; text-decoration: underline; text-underline-offset: 3px; transition: color 0.2s ease; }
+    .prose a:hover { color: #A8D4F5; }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      color: #A8D4F5; text-decoration: none; font-family: 'Outfit', sans-serif;
+      font-weight: 500; font-size: 0.875rem;
+      transition: color 0.2s ease, transform 0.2s ease;
+    }
+    .back-link:hover { color: #7AB8E8; transform: translateX(-2px); }
+
+    .footer-link {
+      color: #C8D6E5; text-decoration: none; font-size: 0.875rem;
+      position: relative; transition: color 0.2s ease;
+    }
+    .footer-link::after {
+      content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
+      height: 1px; background: #7AB8E8;
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.25s cubic-bezier(0.16,1,0.3,1);
+    }
+    .footer-link:hover { color: #7AB8E8; }
+    .footer-link:hover::after { transform: scaleX(1); }
+  </style>
+</head>
+<body>
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <!-- ── Header ── -->
+  <header class="relative px-6 pt-8 pb-4">
+    <div class="max-w-[880px] mx-auto flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <img src="brand_assets/Logo.jpg" alt="Broadhead Automations" class="h-16 rounded" />
+      </a>
+      <a href="index.html" class="back-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to home
+      </a>
+    </div>
+  </header>
+
+  <!-- ── Hero ── -->
+  <section class="relative px-6 pt-10 pb-8">
+    <div class="max-w-[880px] mx-auto">
+      <p class="label-overline mb-3">Legal</p>
+      <h1 class="heading-hero font-display text-silver-100">Terms &amp; Conditions</h1>
+      <p class="mt-4 text-silver-200" style="font-size: 0.95rem; opacity: 0.65;">Last updated: April 22, 2026</p>
+    </div>
+  </section>
+
+  <!-- ── Body ── -->
+  <section class="relative px-6 pb-24">
+    <div class="max-w-[880px] mx-auto prose">
+
+      <p class="intro">
+        These Terms &amp; Conditions ("Terms") govern your use of the Broadhead Automations website, chat widget, inbound booking calls, and SMS communications. By using our website or engaging with our messaging, you agree to these Terms.
+      </p>
+
+      <h2>1. Who we are</h2>
+      <p>
+        Broadhead Automations, LLC ("Broadhead Automations," "we," "our," or "us") is an AI workflow automation business operated from Idaho, USA. We build automations and provide consulting to small businesses.
+      </p>
+
+      <h2>2. Eligibility</h2>
+      <p>
+        You must be at least 18 years old to use our services or enter into agreements with us. By using our site or messaging services, you represent that you meet this requirement.
+      </p>
+
+      <h2>3. Services</h2>
+      <p>
+        We offer AI automation consulting, custom workflow development, and related services. Any work engaged beyond an initial discovery call is governed by a separate written statement of work. These Terms cover your use of our public-facing website, chat, voice booking, and SMS channels — not the specific terms of any client engagement.
+      </p>
+
+      <h2>4. SMS messaging terms</h2>
+
+      <h3>Opt-in</h3>
+      <p>You may opt in to receive SMS from Broadhead Automations in any of the following ways:</p>
+      <ul>
+        <li>Providing your phone number through our website chat widget at broadheadautomations.com after seeing the SMS consent disclosure.</li>
+        <li>Affirmatively consenting during an inbound voice booking call when asked if we can text you about your appointment.</li>
+        <li>Initiating a text message to our business number, or replying START or YES to a welcome message sent after verbal consent.</li>
+      </ul>
+
+      <h3>Message types</h3>
+      <p>
+        Messages you may receive include appointment scheduling outreach, discovery call confirmations, appointment reminders, post-call follow-ups, and customer service replies. We do not send marketing or promotional broadcasts under this program.
+      </p>
+
+      <h3>Message frequency and rates</h3>
+      <p>
+        Message frequency varies based on your inquiry and scheduling activity. Message and data rates may apply depending on your mobile carrier and plan. Broadhead Automations is not responsible for carrier fees.
+      </p>
+
+      <h3>Opt-out and help</h3>
+      <p>
+        You can opt out at any time by replying <strong>STOP</strong> to any message we send. You will receive a single confirmation that you have been unsubscribed, and no further messages will be sent unless you opt back in. Reply <strong>HELP</strong> at any time for support, or email <a href="mailto:sean@broadheadautomations.com">sean@broadheadautomations.com</a>.
+      </p>
+
+      <h3>Carrier disclaimer</h3>
+      <p>
+        Mobile carriers are not liable for delayed or undelivered messages. Supported carriers include (but are not limited to) AT&amp;T, Verizon, T-Mobile, Sprint, and most regional carriers.
+      </p>
+
+      <h3>Privacy</h3>
+      <p>
+        How we handle the data collected through SMS opt-in is described in our <a href="privacy.html">Privacy Policy</a>. Text messaging originator opt-in data and consent will not be shared with any third parties for marketing purposes.
+      </p>
+
+      <h2>5. Acceptable use</h2>
+      <p>You agree not to use our website, chat, or messaging services to:</p>
+      <ul>
+        <li>Harass, threaten, or impersonate any person.</li>
+        <li>Submit false or misleading information.</li>
+        <li>Attempt to probe, scan, or disrupt our systems.</li>
+        <li>Violate any applicable law or regulation.</li>
+      </ul>
+
+      <h2>6. Intellectual property</h2>
+      <p>
+        All content on broadheadautomations.com — including text, graphics, logos, and the underlying site design — is the property of Broadhead Automations, LLC or its licensors, and is protected by U.S. and international copyright law. You may not copy, reproduce, or redistribute content from this site without written permission.
+      </p>
+
+      <h2>7. Disclaimers</h2>
+      <p>
+        Our website and messaging services are provided "as is" without warranties of any kind, express or implied. We do not guarantee that the site or our automated systems will be uninterrupted, error-free, or free of harmful components. Information provided through our chat or voice assistants is for general informational purposes and does not constitute professional, legal, financial, or tax advice.
+      </p>
+
+      <h2>8. Limitation of liability</h2>
+      <p>
+        To the fullest extent permitted by law, Broadhead Automations, LLC will not be liable for any indirect, incidental, consequential, or punitive damages arising out of or related to your use of our website or messaging services, even if we have been advised of the possibility of such damages. Our total liability for any claim arising out of these Terms will not exceed one hundred U.S. dollars ($100).
+      </p>
+
+      <h2>9. Indemnification</h2>
+      <p>
+        You agree to indemnify and hold harmless Broadhead Automations, LLC and its officers, members, and contractors from any claims, damages, or expenses arising out of your misuse of our services or violation of these Terms.
+      </p>
+
+      <h2>10. Governing law</h2>
+      <p>
+        These Terms are governed by the laws of the State of Idaho, without regard to its conflict-of-laws principles. Any dispute arising under these Terms will be resolved in the state or federal courts located in Idaho, and you consent to the jurisdiction of those courts.
+      </p>
+
+      <h2>11. Changes to these Terms</h2>
+      <p>
+        We may update these Terms from time to time. The "Last updated" date above reflects the most recent changes. Continued use of our website or messaging services after changes are posted means you accept the updated Terms.
+      </p>
+
+      <h2>12. Contact</h2>
+      <p>
+        Questions about these Terms? Email <a href="mailto:sean@broadheadautomations.com">sean@broadheadautomations.com</a>.
+      </p>
+      <p>
+        <strong>Broadhead Automations, LLC</strong><br>
+        28700 N Orson Ln<br>
+        Athol, ID 83801
+      </p>
+
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="relative px-6 py-12" style="background: rgba(6,14,26,0.92); border-top: 1px solid #1A3048;">
+    <div class="max-w-[1200px] mx-auto">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+        <a href="index.html" class="flex items-center gap-3">
+          <img src="brand_assets/Logo.jpg" alt="Broadhead" class="h-28 rounded" />
+        </a>
+        <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+          <a href="index.html#about" class="footer-link">About</a>
+          <a href="index.html#services" class="footer-link">Services</a>
+          <a href="index.html#process" class="footer-link">Process</a>
+          <a href="index.html#contact" class="footer-link">Contact</a>
+          <a href="privacy.html" class="footer-link">Privacy</a>
+          <a href="terms.html" class="footer-link">Terms</a>
+        </div>
+      </div>
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4 pt-8" style="border-top: 1px solid rgba(26,48,72,0.5);">
+        <p class="text-silver-200" style="font-size: 0.8rem; opacity: 0.6;">&copy; 2026 Broadhead Automations. All rights reserved.</p>
+        <div class="flex items-center gap-5">
+          <a href="https://www.facebook.com/BroadheadAutomations/" class="footer-link" aria-label="Facebook" target="_blank" rel="noopener">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          </a>
+          <a href="https://www.instagram.com/broadheadautomations/" class="footer-link" aria-label="Instagram" target="_blank" rel="noopener">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+          </a>
+          <a href="https://x.com/BroadheadAuto" class="footer-link" aria-label="X" target="_blank" rel="noopener">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
