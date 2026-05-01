@@ -4,14 +4,14 @@
 Broadhead Automations — Sean's AI workflow automation business website and client-facing presence.
 
 ## What We're Building
-End-to-end inbound booking funnel across three channels — website chat, inbound SMS, Vapi voice — that qualifies every lead and books 30-minute consultations on Sean's Google Calendar (Wed–Fri, 10–12 and 1–2:30 PT).
+End-to-end inbound booking funnel across three channels — website chat, inbound SMS, Vapi voice — that qualifies every lead and books consultations on Sean's Google Calendar (Wed/Fri, 10–12 and 1–3 PT).
 
 See `workflows/booking-automation.md` for the master SOP (WF1 chat / WF2 SMS / WF3 Vapi call-end, Vapi + Twilio setup, confirmation email/SMS flow). **Always read that file first.**
 
 The chat bot is named **Fletcher** (the craftsman who builds arrows).
 
 ## Current State
-- **Website**: [index.html](index.html) — Fletcher chat UI live; points at the n8n webhook `/webhook/broadhead-chat/chat`. Signal-routing canvas network replaces the old wireframe SVG. Twilio number `208-623-9442` shown in the Contact section. **Inline booking modal** (2026-04-14): the "Book a Consultation" CTA (`#bk-trigger`) opens a dark-glass modal with a calendar day rail + 30-min slot pills, collects name + email, and books via WF4's new `/broadhead-web-availability` + `/broadhead-web-book` webhooks. Replaces the old `mailto:` link.
+- **Website**: [index.html](index.html) — Fletcher chat UI live; points at the n8n webhook `/webhook/broadhead-chat/chat`. Signal-routing canvas network replaces the old wireframe SVG. Twilio number `208-623-9442` shown in the Contact section. **Inline booking modal** (2026-04-14): the "Book a Consultation" CTA (`#bk-trigger`) opens a dark-glass modal with a calendar day rail + slot pills, collects name + email, and books via WF4's new `/broadhead-web-availability` + `/broadhead-web-book` webhooks. Replaces the old `mailto:` link.
 - **`.env`**: dedicated `BROADHEAD_*` block for Twilio/Vapi/Calendar wiring.
 - **n8n + Vapi**: **voice stack fully live 2026-04-13**.
   - **WF1** (Chat Booking Agent, `hEsEEtfYEldhP8Eb`) — Fletcher chat widget, books on Sean's calendar, Telegram ping via `@BroadheadAutomationsBot`.

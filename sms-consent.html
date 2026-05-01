@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMS Consent &amp; Messaging Program &mdash; Broadhead Automations</title>
+  <meta name="description" content="The verbatim SMS opt-in disclosure, message frequency, opt-out behavior, and privacy commitments for the Broadhead Automations text-messaging program.">
+  <meta name="robots" content="index,follow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: { 950: '#060E1A', 900: '#0A1628', 800: '#0F2035', 700: '#1A3048' },
+            brand: { 500: '#5B9FD8', 400: '#7AB8E8', 300: '#A8D4F5' },
+            accent: { cyan: '#4AEAED' },
+            silver: { 200: '#C8D6E5', 100: '#E8EFF6' },
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Source Sans 3', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Source Sans 3', sans-serif;
+      background: #060E1A;
+      color: #C8D6E5;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* Noise overlay (matches index.html) */
+    .noise-overlay {
+      position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
+
+    /* Ambient backdrop (lighter than index — no Three.js) */
+    .ambient-glow {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 60% 40% at 18% 0%, rgba(91,159,216,0.09) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 82% 100%, rgba(74,234,237,0.05) 0%, transparent 65%);
+    }
+
+    /* Typography (matches index.html scale) */
+    .font-display { font-family: 'Outfit', sans-serif; }
+    .font-body { font-family: 'Source Sans 3', sans-serif; }
+    .heading-page { font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 800; line-height: 1.0; letter-spacing: -0.025em; }
+    .heading-section { font-size: clamp(1.75rem, 4vw, 2.25rem); font-weight: 700; line-height: 1.15; }
+    .label-overline { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; color: #A8D4F5; }
+    .body-text { font-size: 1.0625rem; font-weight: 400; line-height: 1.7; color: #C8D6E5; }
+    .body-text a { color: #7AB8E8; text-decoration: underline; text-decoration-color: rgba(122,184,232,0.4); text-underline-offset: 3px; transition: color 0.2s ease, text-decoration-color 0.2s ease; }
+    .body-text a:hover { color: #4AEAED; text-decoration-color: #4AEAED; }
+
+    /* Section rule (matches index.html accent) */
+    .section-rule { width: 4rem; height: 2px; background: #5B9FD8; margin-bottom: 1.25rem; }
+
+    /* The disclosure pull-quote (the page's centerpiece) */
+    .disclosure-card {
+      position: relative;
+      padding: 2.5rem 2rem 2.5rem 2.75rem;
+      background: linear-gradient(160deg, rgba(15,32,53,0.85) 0%, rgba(10,22,40,0.7) 100%);
+      border: 1px solid rgba(91,159,216,0.25);
+      border-left: 3px solid #5B9FD8;
+      border-radius: 6px 14px 14px 6px;
+      box-shadow: 0 12px 48px -16px rgba(91,159,216,0.25), inset 0 1px 0 rgba(168,212,245,0.06);
+      overflow: hidden;
+    }
+    .disclosure-card::before {
+      content: '\201C';
+      position: absolute;
+      top: -1.25rem; left: 1rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 7rem; font-weight: 800; line-height: 1;
+      color: rgba(91,159,216,0.18);
+      pointer-events: none;
+    }
+    .disclosure-card::after {
+      content: '';
+      position: absolute; inset: -1px;
+      border-radius: inherit;
+      background: linear-gradient(135deg, transparent 60%, rgba(91,159,216,0.08) 100%);
+      pointer-events: none;
+    }
+    .disclosure-text {
+      position: relative; z-index: 1;
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(1.0625rem, 1.6vw, 1.25rem);
+      font-weight: 500;
+      line-height: 1.6;
+      color: #E8EFF6;
+      letter-spacing: -0.005em;
+    }
+    .disclosure-text a {
+      color: #7AB8E8;
+      text-decoration: underline;
+      text-decoration-color: rgba(122,184,232,0.4);
+      text-underline-offset: 3px;
+      transition: color 0.2s ease, text-decoration-color 0.2s ease;
+    }
+    .disclosure-text a:hover { color: #4AEAED; text-decoration-color: #4AEAED; }
+
+    /* Fact grid */
+    .fact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 1.75rem;
+    }
+    .fact-cell {
+      padding: 1.15rem 1.4rem;
+      background: rgba(10,22,40,0.5);
+      border: 1px solid rgba(26,48,72,0.7);
+      border-radius: 4px;
+      transition: border-color 0.25s ease, transform 0.25s cubic-bezier(0.16,1,0.3,1);
+    }
+    .fact-cell:hover { border-color: rgba(91,159,216,0.4); transform: translateY(-2px); }
+    .fact-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; color: #5B9FD8; margin-bottom: 0.5rem; }
+    .fact-value { font-family: 'Outfit', sans-serif; font-size: 0.9375rem; font-weight: 600; color: #E8EFF6; line-height: 1.4; }
+
+    /* Step list */
+    .step-list { counter-reset: step; list-style: none; padding: 0; }
+    .step-list li {
+      counter-increment: step;
+      position: relative;
+      padding: 0.6rem 0 0.6rem 3.25rem;
+      font-size: 1.0625rem;
+      line-height: 1.65;
+      color: #C8D6E5;
+    }
+    .step-list li::before {
+      content: counter(step, decimal-leading-zero);
+      position: absolute;
+      left: 0; top: 0.55rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem; font-weight: 700;
+      color: #5B9FD8;
+      letter-spacing: 0.05em;
+    }
+    .step-list li::after {
+      content: ''; position: absolute;
+      left: 1.85rem; top: 1rem;
+      width: 0.85rem; height: 1px;
+      background: rgba(91,159,216,0.45);
+    }
+    .step-list li a {
+      color: #7AB8E8;
+      text-decoration: underline;
+      text-decoration-color: rgba(122,184,232,0.4);
+      text-underline-offset: 3px;
+    }
+    .step-list li a:hover { color: #4AEAED; }
+
+    /* Keyword chip */
+    .keyword-chip {
+      display: inline-block;
+      padding: 0.1rem 0.5rem;
+      background: rgba(91,159,216,0.12);
+      border: 1px solid rgba(91,159,216,0.35);
+      border-radius: 3px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #A8D4F5;
+      vertical-align: 1px;
+    }
+
+    /* Sticky nav (matches index.html style, simplified for leaf page) */
+    .site-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 0.85rem 2rem;
+      background: rgba(6,14,26,0.85);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(26,48,72,0.5);
+    }
+    .nav-link {
+      color: #C8D6E5; text-decoration: none; font-family: 'Outfit', sans-serif;
+      font-weight: 500; font-size: 0.875rem; position: relative;
+      transition: color 0.2s ease;
+    }
+    .nav-link::after {
+      content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
+      height: 2px; background: #5B9FD8;
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.25s cubic-bezier(0.16,1,0.3,1);
+    }
+    .nav-link:hover { color: #7AB8E8; }
+    .nav-link:hover::after { transform: scaleX(1); }
+    .nav-link:focus-visible { outline: 2px solid #4AEAED; outline-offset: 3px; }
+
+    /* Footer (matches index.html footer style) */
+    .footer-link {
+      color: #C8D6E5; text-decoration: none; font-size: 0.875rem;
+      position: relative; transition: color 0.2s ease;
+    }
+    .footer-link::after {
+      content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
+      height: 1px; background: #7AB8E8;
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.25s cubic-bezier(0.16,1,0.3,1);
+    }
+    .footer-link:hover { color: #7AB8E8; }
+    .footer-link:hover::after { transform: scaleX(1); }
+
+    /* Reveal-on-load (staggered) */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .reveal { animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+    /* Print: clean black-on-white if a reviewer prints the page */
+    @media print {
+      body { background: #fff; color: #000; }
+      .noise-overlay, .ambient-glow, .site-nav, footer { display: none !important; }
+      main { padding-top: 1rem !important; }
+      .disclosure-card {
+        background: #fff; border-color: #000; box-shadow: none;
+      }
+      .disclosure-card::before, .disclosure-card::after { display: none; }
+      .disclosure-text, .body-text, .fact-value, .step-list li { color: #000; }
+      .fact-label, .label-overline { color: #444; }
+      .keyword-chip { background: #fff; color: #000; border-color: #000; }
+      a { color: #000; text-decoration: underline; }
+      .heading-page, .heading-section { color: #000 !important; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { animation: none; }
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="noise-overlay" aria-hidden="true"></div>
+  <div class="ambient-glow" aria-hidden="true"></div>
+
+  <!-- NAV -->
+  <nav class="site-nav">
+    <div class="max-w-[1200px] mx-auto flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3" aria-label="Broadhead Automations home">
+        <img src="brand_assets/Logo.jpg" alt="Broadhead" class="h-16 rounded" />
+      </a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/#contact" class="nav-link">Contact</a>
+        <a href="tel:+12086239442" class="nav-link flex items-center gap-2" style="color: #4AEAED;">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6.6 7.4c.6 1.2 1.8 2.4 3 3l1-.8c.2-.2.4-.2.6-.1l2 .8c.2.1.3.3.3.5v2c0 .3-.2.5-.5.5C6.3 13.7 2.3 9.7 2 3.5 2 3.2 2.2 3 2.5 3h2c.2 0 .4.1.5.3l.8 2c.1.2 0 .4-.1.6l-.8 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          (208) 623-9442
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="relative z-10 px-6 pt-32 md:pt-40 pb-20">
+    <div class="max-w-[760px] mx-auto">
+
+      <!-- Header -->
+      <header class="mb-16 reveal" style="animation-delay: 0s;">
+        <p class="label-overline mb-5">SMS Program / Disclosure</p>
+        <h1 class="font-display heading-page text-silver-100 mb-6">Text Messaging Program</h1>
+        <p class="body-text max-w-[640px]">
+          The full opt-in disclosure, message frequency, opt-out behavior, and privacy commitments for the Broadhead Automations SMS program. The same disclosure shown to users inside the website chat is published verbatim below for transparency and review verification.
+        </p>
+        <p class="mt-5" style="font-size: 0.75rem; color: rgba(168,212,245,0.55); letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600;">Last updated &middot; May 1, 2026</p>
+      </header>
+
+      <!-- 01 At a glance -->
+      <section class="mb-16 reveal" style="animation-delay: 0.08s;">
+        <div class="section-rule"></div>
+        <p class="label-overline mb-3">01 / At a glance</p>
+        <h2 class="font-display heading-section text-silver-100 mb-3">Program facts</h2>
+        <p class="body-text">Broadhead Automations operates a transactional SMS program for our own discovery-call booking funnel &mdash; appointment confirmations, reminders, and post-call follow-ups. No marketing, promotional, or informational broadcasts are sent under this program.</p>
+
+        <div class="fact-grid">
+          <div class="fact-cell">
+            <p class="fact-label">Sender</p>
+            <p class="fact-value">Broadhead Automations, LLC</p>
+          </div>
+          <div class="fact-cell">
+            <p class="fact-label">Program type</p>
+            <p class="fact-value">Transactional &middot; Appointment booking</p>
+          </div>
+          <div class="fact-cell">
+            <p class="fact-label">Frequency</p>
+            <p class="fact-value">Varies based on your booking activity</p>
+          </div>
+          <div class="fact-cell">
+            <p class="fact-label">Carrier charges</p>
+            <p class="fact-value">Msg &amp; data rates may apply</p>
+          </div>
+          <div class="fact-cell">
+            <p class="fact-label">Opt out</p>
+            <p class="fact-value">Reply <span class="keyword-chip">STOP</span> any time</p>
+          </div>
+          <div class="fact-cell">
+            <p class="fact-label">Help</p>
+            <p class="fact-value">Reply <span class="keyword-chip">HELP</span> any time</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 The verbatim disclosure (centerpiece) -->
+      <section class="mb-16 reveal" style="animation-delay: 0.16s;">
+        <div class="section-rule"></div>
+        <p class="label-overline mb-3">02 / The disclosure</p>
+        <h2 class="font-display heading-section text-silver-100 mb-3">Verbatim opt-in language</h2>
+        <p class="body-text mb-7">This is the exact disclosure shown to a user inside the Fletcher chat widget on broadheadautomations.com, displayed before the user submits their phone number. Submitting a phone number after seeing this language constitutes affirmative consent to receive SMS from Broadhead Automations.</p>
+
+        <blockquote class="disclosure-card">
+          <p class="disclosure-text">
+            By sharing your phone number, you agree to receive SMS from Broadhead Automations about your inquiry &mdash; including appointment scheduling, confirmations, and reminders. Msg frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. See our <a href="privacy.html">Privacy Policy</a> and <a href="terms.html">Terms</a>.
+          </p>
+        </blockquote>
+      </section>
+
+      <!-- 03 How users opt in -->
+      <section class="mb-16 reveal" style="animation-delay: 0.24s;">
+        <div class="section-rule"></div>
+        <p class="label-overline mb-3">03 / How users opt in</p>
+        <h2 class="font-display heading-section text-silver-100 mb-6">The opt-in flow</h2>
+        <ol class="step-list">
+          <li>The user visits <a href="https://broadheadautomations.com">broadheadautomations.com</a> and clicks the &ldquo;Talk to Fletcher&rdquo; chat widget in the bottom-right corner.</li>
+          <li>The user proceeds through the booking conversation with Fletcher, our AI assistant.</li>
+          <li>Before the user submits a phone number, the chat displays the verbatim disclosure quoted above, with active hyperlinks to our Privacy Policy and Terms.</li>
+          <li>The user types a phone number into the chat and submits it. That submission is recorded as affirmative SMS opt-in for that user&rsquo;s booking.</li>
+          <li>Messages are sent only to that user&rsquo;s submitted number, only for that user&rsquo;s discovery-call booking, and never for marketing or to third parties.</li>
+        </ol>
+      </section>
+
+      <!-- 04 STOP / HELP -->
+      <section class="mb-16 reveal" style="animation-delay: 0.32s;">
+        <div class="section-rule"></div>
+        <p class="label-overline mb-3">04 / STOP &amp; HELP keywords</p>
+        <h2 class="font-display heading-section text-silver-100 mb-6">Opt-out and assistance</h2>
+        <p class="body-text mb-4">Reply <span class="keyword-chip">STOP</span> to any message at any time to be unsubscribed immediately. Aliases <span class="keyword-chip">CANCEL</span>, <span class="keyword-chip">END</span>, <span class="keyword-chip">QUIT</span>, <span class="keyword-chip">UNSUBSCRIBE</span>, <span class="keyword-chip">REVOKE</span>, <span class="keyword-chip">OPTOUT</span>, and <span class="keyword-chip">STOPALL</span> are also honored. After opting out you will receive one final confirmation message and no further SMS from this program until you reply <span class="keyword-chip">START</span> to resubscribe.</p>
+        <p class="body-text">Reply <span class="keyword-chip">HELP</span> or <span class="keyword-chip">INFO</span> at any time for support and program details. STOP and HELP keywords are honored automatically by our messaging platform regardless of message content or thread state.</p>
+      </section>
+
+      <!-- 05 Privacy / non-transfer -->
+      <section class="mb-16 reveal" style="animation-delay: 0.4s;">
+        <div class="section-rule"></div>
+        <p class="label-overline mb-3">05 / Privacy</p>
+        <h2 class="font-display heading-section text-silver-100 mb-6">Your data</h2>
+        <p class="body-text mb-4">Phone numbers and SMS opt-in data collected through this program are not shared with or sold to third parties or affiliates for marketing purposes, and opt-in consent is never transferred between Broadhead Automations and any other business.</p>
+        <p class="body-text">Full details: <a href="privacy.html">Privacy Policy</a> &middot; <a href="terms.html">Terms &amp; Conditions</a>.</p>
+      </section>
+
+      <!-- 06 Contact -->
+      <section class="reveal" style="animation-delay: 0.48s;">
+        <div class="section-rule"></div>
+        <p class="label-overline mb-3">06 / Contact</p>
+        <h2 class="font-display heading-section text-silver-100 mb-6">Reach us</h2>
+        <p class="body-text" style="margin-bottom: 0.4rem;">Broadhead Automations, LLC</p>
+        <p class="body-text" style="margin-bottom: 0.4rem;">28700 N Orson Ln, Athol, ID 83801</p>
+        <p class="body-text" style="margin-bottom: 0.4rem;">Phone: <a href="tel:+12086239442">(208) 623-9442</a></p>
+        <p class="body-text">Email: <a href="mailto:sean@broadheadautomations.com">sean@broadheadautomations.com</a></p>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- FOOTER (matches index.html) -->
+  <footer class="relative px-6 py-12 z-10" style="background: rgba(6,14,26,0.92); border-top: 1px solid #1A3048;">
+    <div class="max-w-[1200px] mx-auto">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+        <a href="/" class="flex items-center gap-3">
+          <img src="brand_assets/Logo.jpg" alt="Broadhead" class="h-28 rounded" />
+        </a>
+        <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+          <a href="/#about" class="footer-link">About</a>
+          <a href="/#services" class="footer-link">Services</a>
+          <a href="/#process" class="footer-link">Process</a>
+          <a href="/#contact" class="footer-link">Contact</a>
+          <a href="privacy.html" class="footer-link">Privacy</a>
+          <a href="terms.html" class="footer-link">Terms</a>
+          <a href="sms-consent.html" class="footer-link" style="color: #7AB8E8;">SMS Consent</a>
+        </div>
+      </div>
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4 pt-8" style="border-top: 1px solid rgba(26,48,72,0.5);">
+        <p class="text-silver-200" style="font-size: 0.8rem; opacity: 0.6;">&copy; 2026 Broadhead Automations. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

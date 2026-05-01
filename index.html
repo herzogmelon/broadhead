@@ -823,6 +823,7 @@
           <a href="#contact" class="footer-link">Contact</a>
           <a href="privacy.html" class="footer-link">Privacy</a>
           <a href="terms.html" class="footer-link">Terms</a>
+          <a href="sms-consent.html" class="footer-link">SMS Consent</a>
         </div>
       </div>
       <div class="flex flex-col md:flex-row items-center justify-between gap-4 pt-8" style="border-top: 1px solid rgba(26,48,72,0.5);">
@@ -1594,6 +1595,7 @@
     .aria-msg {
       max-width: 82%; padding: 10px 13px; border-radius: 12px;
       font-family: 'Source Sans 3', sans-serif; font-size: 14px; line-height: 1.55;
+      white-space: pre-wrap; overflow-wrap: anywhere;
     }
     .aria-msg.bot {
       background: #0F2035; color: #C8D6E5; border-bottom-left-radius: 4px; align-self: flex-start;
@@ -1730,6 +1732,10 @@
     (function () {
       const CHAT_WEBHOOK = 'https://broadheadautomations.app.n8n.cloud/webhook/broadhead-chat/chat';
 
+      // Static welcome — A2P 10DLC compliance, deterministic, no LLM drift.
+      // Sender, opt-in action, message purpose, frequency, rates, STOP/HELP, terms URL all present.
+      const WELCOME = "Hey, I'm Fletcher — Sean's AI assistant at Broadhead Automations. I can book a discovery call for you right now.\n\nHeads-up: by providing your phone number, you agree to receive SMS from Broadhead Automations about your inquiry, appointment confirmations, and reminders. Msg frequency varies. Msg & data rates may apply. Reply STOP to opt out, HELP for help. Terms & Privacy: https://broadheadautomations.com/sms-consent.html\n\nWant to book a call?";
+
       const btn     = document.getElementById('aria-btn');
       const drawer  = document.getElementById('aria-drawer');
       const closeEl = document.getElementById('aria-close');
@@ -1864,22 +1870,9 @@
         }
       }
 
-      // Initial greeting
-      async function greet() {
-        busy = true;
-        showTyping();
-        try {
-          const data = await callFletcher('hello');
-          hideTyping();
-          const reply = (data && (data.output || data.reply)) ||
-            "Hey, this is Fletcher, Sean's AI assistant at Broadhead. Would you like to schedule a discovery call with Sean?";
-          addMsg(reply, 'bot');
-        } catch {
-          hideTyping();
-          addMsg("Hey, this is Fletcher, Sean's AI assistant at Broadhead. Would you like to schedule a discovery call with Sean?", 'bot');
-        } finally {
-          busy = false;
-        }
+      // Initial greeting — static, no n8n round-trip
+      function greet() {
+        addMsg(WELCOME, 'bot');
       }
 
       // Send on button click
