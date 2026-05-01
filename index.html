@@ -1604,6 +1604,9 @@
       background: #5B9FD8; color: #060E1A; font-weight: 500;
       border-bottom-right-radius: 4px; align-self: flex-end;
     }
+    .aria-msg a {
+      color: inherit; text-decoration: underline; overflow-wrap: anywhere;
+    }
     .aria-typing {
       display: flex; gap: 4px; align-items: center;
       padding: 10px 14px; background: #0F2035; border-radius: 12px;
@@ -1734,7 +1737,8 @@
 
       // Static welcome — A2P 10DLC compliance, deterministic, no LLM drift.
       // Sender, opt-in action, message purpose, frequency, rates, STOP/HELP, terms URL all present.
-      const WELCOME = "Hey, I'm Fletcher — Sean's AI assistant at Broadhead Automations. I can book a discovery call for you right now.\n\nHeads-up: by providing your phone number, you agree to receive SMS from Broadhead Automations about your inquiry, appointment confirmations, and reminders. Msg frequency varies. Msg & data rates may apply. Reply STOP to opt out, HELP for help. Terms & Privacy: https://broadheadautomations.com/sms-consent.html\n\nWant to book a call?";
+      // Rendered via innerHTML in greet() so the consent URL is a clickable anchor.
+      const WELCOME_HTML = "Hey, I'm Fletcher — Sean's AI assistant at Broadhead Automations. I can book a discovery call for you right now.\n\nHeads-up: by providing your phone number, you agree to receive SMS from Broadhead Automations about your inquiry, appointment confirmations, and reminders. Msg frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. Terms &amp; Privacy: <a href=\"https://broadheadautomations.com/sms-consent.html\" target=\"_blank\" rel=\"noopener noreferrer\">https://broadheadautomations.com/sms-consent.html</a>\n\nWant to book a call?";
 
       const btn     = document.getElementById('aria-btn');
       const drawer  = document.getElementById('aria-drawer');
@@ -1776,11 +1780,15 @@
         }
       }, 5000);
 
-      // Append message bubble
-      function addMsg(text, who) {
+      // Append message bubble. opts.html only used for the static WELCOME_HTML (trusted, hardcoded).
+      function addMsg(text, who, opts) {
         const el = document.createElement('div');
         el.className = 'aria-msg ' + who;
-        el.textContent = text;
+        if (opts && opts.html) {
+          el.innerHTML = text;
+        } else {
+          el.textContent = text;
+        }
         msgEl.appendChild(el);
         msgEl.scrollTop = msgEl.scrollHeight;
       }
@@ -1872,7 +1880,7 @@
 
       // Initial greeting — static, no n8n round-trip
       function greet() {
-        addMsg(WELCOME, 'bot');
+        addMsg(WELCOME_HTML, 'bot', { html: true });
       }
 
       // Send on button click
