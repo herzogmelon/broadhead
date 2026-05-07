@@ -1172,6 +1172,17 @@
     .bk-input:focus { border-color: #5B9FD8; background: #0F2840; }
     .bk-input::placeholder { color: #4a5f75; }
     .bk-input.invalid { border-color: #d56b6b; }
+    .bk-label-aside {
+      text-transform: none; letter-spacing: 0; font-weight: 400;
+      color: #6f8499; margin-left: 4px;
+    }
+    .bk-consent {
+      font-size: 10.5px; line-height: 1.45;
+      color: #C8D6E5; opacity: 0.62;
+      margin: 6px 2px 0;
+    }
+    .bk-consent a { color: #7AB8E8; text-decoration: underline; text-underline-offset: 2px; }
+    .bk-consent a:hover { color: #A8D4F5; }
 
     .bk-form-actions {
       display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -1314,6 +1325,11 @@
               <label class="bk-label" for="bk-email">Email</label>
               <input class="bk-input" id="bk-email" type="email" autocomplete="email" placeholder="you@company.com" required />
             </div>
+            <div class="bk-form-row">
+              <label class="bk-label" for="bk-phone">Phone <span class="bk-label-aside">(optional, for confirmation + reminder SMS)</span></label>
+              <input class="bk-input" id="bk-phone" type="tel" autocomplete="tel" placeholder="(208) 555-0123" />
+              <p class="bk-consent">By providing a phone number, you agree to receive SMS from Broadhead Automations about your appointment, confirmations, and reminders. Msg frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. <a href="sms-consent.html" target="_blank" rel="noopener noreferrer">Terms &amp; Privacy</a>.</p>
+            </div>
             <div class="bk-error-msg" id="bk-form-error" role="alert"></div>
             <div class="bk-form-actions">
               <button type="button" class="bk-back" id="bk-back">
@@ -1367,6 +1383,7 @@
       const form = document.getElementById('bk-form');
       const nameInput = document.getElementById('bk-name');
       const emailInput = document.getElementById('bk-email');
+      const phoneInput = document.getElementById('bk-phone');
       const formError = document.getElementById('bk-form-error');
       const confirmBtn = document.getElementById('bk-confirm');
       const confirmLabel = document.getElementById('bk-confirm-label');
@@ -1416,9 +1433,11 @@
         activeDayIdx = 0;
         nameInput.value = '';
         emailInput.value = '';
+        phoneInput.value = '';
         formError.textContent = '';
         nameInput.classList.remove('invalid');
         emailInput.classList.remove('invalid');
+        phoneInput.classList.remove('invalid');
         confirmBtn.disabled = false;
         confirmLabel.textContent = 'Confirm booking';
       }
@@ -1483,14 +1502,29 @@
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
       }
 
+      function normalizePhone(s) {
+        const digits = (s || '').replace(/\D/g, '');
+        if (!digits) return '';
+        if (digits.length === 10) return '+1' + digits;
+        if (digits.length === 11 && digits.startsWith('1')) return '+' + digits;
+        return '';
+      }
+
       async function submit(e) {
         e.preventDefault();
         const name = nameInput.value.trim();
         const email = emailInput.value.trim();
+        const phoneRaw = phoneInput.value.trim();
+        const phone = phoneRaw ? normalizePhone(phoneRaw) : '';
         nameInput.classList.toggle('invalid', !name);
         emailInput.classList.toggle('invalid', !isValidEmail(email));
+        phoneInput.classList.toggle('invalid', !!phoneRaw && !phone);
         if (!name || !isValidEmail(email)) {
           formError.textContent = 'Add a name and a valid email so Sean can send you the calendar invite.';
+          return;
+        }
+        if (phoneRaw && !phone) {
+          formError.textContent = 'Phone needs to be a US number, like (208) 555-0123. Or leave it blank for calendar invite only.';
           return;
         }
         formError.textContent = '';
@@ -1500,7 +1534,7 @@
           const res = await fetch(BOOK_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ name, email, slot_iso: pickedSlot.iso, source: 'web' }),
+            body: JSON.stringify({ name, email, phone, slot_iso: pickedSlot.iso, source: 'web' }),
           });
           const data = await res.json().catch(() => ({}));
           if (!res.ok || !data.ok) throw new Error('http ' + res.status);

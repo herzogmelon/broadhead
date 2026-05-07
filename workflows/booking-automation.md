@@ -428,6 +428,19 @@ For voice (WF3), referral fields live only in the Telegram ping + Vapi's end-of-
   2. *"Where are you stuck right now — leads slipping through, no time to keep up, or hitting a ceiling?"* — pick-one frame so small operators self-diagnose instead of inventing an answer.
   3. *"Best name, email, and number to get you booked with Sean?"*
   Deprecated `hours_per_week` and `team_size` fields across the CAPTURE marker, WF1 Book Consultation description, Vapi `book_consultation` tool schema, and WF4 Extract/Create/Confirm nodes. Q1's richer answer now lives entirely in `business_type`. Old 5-question list preserved in the Archived Variants section below for rollback.
+- **Twilio inbound SMS webhook body is form-urlencoded, not JSON** (2026-05-07, WF2 build) — Twilio's Messaging webhook POSTs `application/x-www-form-urlencoded` with fields `From`, `To`, `Body`, `MessageSid`, etc. n8n's Webhook node parses these into `$json.body.From` / `$json.body.Body`. **Different from Goody's WF1 inbound SMS pattern** (which Twilio sends as `text/plain` and n8n leaves as a raw string requiring `JSON.parse` in a Code node — that's a Goody's-specific quirk from how the SMS-relay shim was set up, not a Twilio default). For Broadhead WF2: reference fields directly via `{{ $json.body.From }}` — no Code node needed.
+- **n8n webhook node-level config fields belong at node root, NOT in `parameters`** (2026-05-07, WF2 build) — when adding `onError` and `alwaysOutputData` to a Webhook node, the n8n schema validator rejects them inside `parameters` with *"Node-level properties onError, alwaysOutputData are in the wrong location."* Correct shape:
+  ```json
+  {
+    "name": "Webhook",
+    "type": "n8n-nodes-base.webhook",
+    "parameters": { "httpMethod": "POST", "path": "...", "responseMode": "...", "options": {} },
+    "onError": "continueRegularOutput",
+    "alwaysOutputData": true
+  }
+  ```
+  This holds for Webhook node only — schedule/HTTP nodes have their own config-level placements. The MCP `validate_node` tool's `autofix` field is the source of truth for which fields go where.
+- **WF4 web modal didn't collect phone — silently no-SMS** (2026-05-07, post-A2P clearance) — when WF4 was first wired (2026-04-14), the inline booking modal collected `name + email + slot + notes` only. After Twilio A2P cleared, the plan's "extend WF4 with confirmation SMS" recommendation hit a missing-prerequisite: there was no phone to text. Fixed 2026-05-07 by adding optional `<input id="bk-phone" type="tel">` + the static A2P consent block to the form, plus a JS E.164 normalizer (10 digits → `+1{digits}`, 11 digits starting with 1 → `+{digits}`, anything else → `''`). WF4's `Extract Web Args` Code node parses the phone with the same E.164 logic. New `Has Phone?` IF + `Send Web Confirmation SMS` Twilio node fire in parallel with the existing Notify-Sean → Respond chain — calendar invite delivery is unblocked even if Twilio fails. Web bookings are NOT yet recorded in the Data Table, so reminder-sweep coverage (WF5) doesn't apply to them; revisit if Sean wants reminders for web-booked calls.
 
 ### Archived Variants
 
